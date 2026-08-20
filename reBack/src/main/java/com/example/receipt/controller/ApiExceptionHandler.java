@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -22,6 +24,21 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIOException(IOException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse("FILE_READ_ERROR", "画像ファイルを読み込めませんでした。", OffsetDateTime.now()));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRequestParameter(MissingServletRequestParameterException e) {
+        return missingRequestDataResponse();
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRequestPart(MissingServletRequestPartException e) {
+        return missingRequestDataResponse();
+    }
+
+    private ResponseEntity<ErrorResponse> missingRequestDataResponse() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("MISSING_REQUEST_DATA", "必須のリクエスト項目がありません。", OffsetDateTime.now()));
     }
 
     @ExceptionHandler(Exception.class)

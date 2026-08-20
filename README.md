@@ -75,10 +75,10 @@ Blueprintで使用する環境変数は次の用途に限定する。
 - `APP_FRONTEND_ORIGIN`
 - Render PostgreSQLから供給される `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD`
 
-GeminiモデルはBackend設定ファイルで `gemini-2.5-flash-lite` に固定している。
+GeminiモデルはBackend設定ファイルで `gemini-3.5-flash-lite` に固定している。
 
 ## Geminiモデル
-- 採用モデル: `gemini-2.5-flash-lite`
+- 採用モデル: `gemini-3.5-flash-lite`
 - 画像入力とStructured Outputを使用してレシート文字列をJSONで取得する。
 - Geminiモデル名およびAPIキーにGemini専用環境変数は使用しない。
 - 将来モデルを変更する場合はBackend設定/実装と互換性テストを更新する。

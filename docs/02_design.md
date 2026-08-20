@@ -82,7 +82,7 @@ CREATE TABLE receipt_<uuid32> (
 
 ## 5. Gemini連携
 - Java SDK: `com.google.genai:google-genai`
-- モデル: `gemini-2.5-flash-lite`。`application.yml` に固定し、Geminiモデル用環境変数は定義しない。
+- モデル: `gemini-3.5-flash-lite`。`application.yml` に固定し、Geminiモデル用環境変数は定義しない。
 - API Key: multipartの必須 `geminiApiKey` のみ使用する。
 - Backend既定キー: なし。
 - Gemini APIキー環境変数: なし。

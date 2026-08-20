@@ -9,7 +9,7 @@
 - Frontend開発フォルダ名は `reFront` とすること。
 - BackendはRender上で稼働し、Render PostgreSQLを使用すること。
 - Backend開発フォルダ名は `reBack` とすること。
-- レシート画像解析にはGemini APIを使用し、初期採用モデルは `gemini-2.5-flash-lite` とすること。
+- レシート画像解析にはGemini APIを使用し、採用モデルは `gemini-3.5-flash-lite` とすること。
 - 添付の `レシート.zip` を開発・確認用レシート画像として扱うこと。
 - コア機能を優先し、拡張機能は後回しとすること。
 - レシート画像1枚を解析するたびにPostgreSQLへ新しいテーブルを1個作成し、そのレシートの抽出テキストを保存すること。
@@ -40,7 +40,7 @@ Bootstrap、Tailwind CSS、SCSS、Figma等はコア機能に必須ではない�
 - 運用者が用意した複数のGemini APIキーをソースへ埋め込まず、無料枠のリクエスト上限に達するたびにFrontend上で次のAPIキーへ入れ替えて同じ画像を再試行できること。キー本数はUIへ固定しない。
 - Web入力したGemini APIキーはGitHub Pagesのソース、localStorage、sessionStorage、PostgreSQLへ保存しない。BackendへHTTPSでリクエスト単位に送信し、そのリクエストのGemini呼び出しだけに使用する。
 - BackendはGemini APIの429/RESOURCE_EXHAUSTEDを `GEMINI_QUOTA_EXCEEDED` として返し、FrontendはAPIキー欄へフォーカスして次のキー入力を促す。無効・権限不足キーは `GEMINI_API_KEY_REJECTED` として再入力を促す。
-- Geminiモデルは `gemini-2.5-flash-lite` とし、Geminiモデル用の環境変数も定義しない。
+- Geminiモデルは `gemini-3.5-flash-lite` とし、Geminiモデル用の環境変数も定義しない。
 - Render Blueprintは `reBack/render.yml` に配置する。
 
 ## 5. 初期版の対象外

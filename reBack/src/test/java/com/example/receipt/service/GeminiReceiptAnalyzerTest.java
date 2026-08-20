@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class GeminiReceiptAnalyzerTest {
     @Test
     void failsCleanlyWhenWebApiKeyIsMissing() {
-        GeminiReceiptAnalyzer analyzer = new GeminiReceiptAnalyzer("gemini-2.5-flash-lite");
+        GeminiReceiptAnalyzer analyzer = new GeminiReceiptAnalyzer("gemini-3.5-flash-lite");
 
         assertThatThrownBy(() -> analyzer.analyze(new byte[]{1, 2, 3}, "image/jpeg", ""))
                 .isInstanceOfSatisfying(ReceiptException.class, e -> {

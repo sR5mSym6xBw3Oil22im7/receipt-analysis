@@ -15,7 +15,7 @@ Gemini APIキーを成果物へ埋め込まず、通常の自動テストではG
 | BE-06 | Validator | 5MB超を413相当で拒否する |
 | BE-07 | Gemini Adapter | Web入力APIキーが空なら400相当の明示エラーにする |
 | BE-08 | Integration | multipart POST + `geminiApiKey` -> Stub解析 -> 動的テーブル作成まで通る |
-| BE-09 | Gemini設定 | モデルが `gemini-2.5-flash-lite` である |
+| BE-09 | Gemini設定 | モデルが `gemini-3.5-flash-lite` である |
 | BE-10 | Gemini設定 | Gemini APIキー/Geminiモデル用の環境変数を定義しない |
 | BE-11 | APIキー | Web入力APIキーをtrimして利用する |
 | BE-12 | APIキー | 異常に長いWeb入力APIキーを拒否する |
@@ -44,7 +44,7 @@ Gemini APIキーを成果物へ埋め込まず、通常の自動テストではG
 - Frontend Node smoke test: PASS (7/7)
 - Backend Java core smoke: PASS (Web入力APIキー必須/trim/長さ制限)
 - 添付ZIPファイル検査: PASS (52/52 JPEG, 52/52 under 5MB)
-- Gemini model configuration static check: PASS (`gemini-2.5-flash-lite` 固定)
+- Gemini model configuration static check: PASS (`gemini-3.5-flash-lite` 固定)
 - Gemini API key static check: PASS (Frontend入力値のみ使用、Gemini APIキー環境変数なし、Browser Storage非保存)
 - Render Blueprint static check: PASS (`reBack/render.yml` 配置、`rootDir: reBack`、Gemini関連envVarsなし)
 - Gemini実API E2E: NOT RUN (実APIキーを成果物へ保持しないため)

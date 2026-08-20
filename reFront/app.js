@@ -54,6 +54,25 @@ function showApiKeyRetry(errorCode, fallbackMessage) {
   statusElement.textContent = `エラー: ${fallbackMessage}`;
 }
 
+async function analyzeReceipt(formData) {
+  const analyzeResponse = await fetch(`${API_BASE_URL}/api/receipts/analyze`, {
+    method: "POST",
+    body: formData
+  });
+
+  if (analyzeResponse.status !== 404) {
+    return { response: analyzeResponse, stored: false };
+  }
+
+  // Older deployed Backends expose only POST /api/receipts, which analyzes
+  // and stores the receipt in one request.
+  const legacyResponse = await fetch(`${API_BASE_URL}/api/receipts`, {
+    method: "POST",
+    body: formData
+  });
+  return { response: legacyResponse, stored: true };
+}
+
 clearApiKeyButton.addEventListener("click", () => {
   apiKeyInput.value = "";
   apiKeyInput.focus();
@@ -87,10 +106,7 @@ form.addEventListener("submit", async (event) => {
   statusElement.textContent = "レシートを解析しています。";
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/receipts/analyze`, {
-      method: "POST",
-      body: formData
-    });
+    const { response, stored } = await analyzeReceipt(formData);
 
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -101,11 +117,17 @@ form.addEventListener("submit", async (event) => {
     }
 
     analyzedLines = Array.isArray(body.lines) ? body.lines : [];
-    tableNameElement.textContent = "未保存";
+    tableNameElement.textContent = stored ? (body.tableName || "保存済み") : "未保存";
     lineCountElement.textContent = String(analyzedLines.length);
     receiptTextElement.textContent = analyzedLines.join("\n");
-    saveButton.classList.remove("hidden");
-    statusElement.textContent = "解析が完了しました。内容を確認してPostgreSQL保存を実行してください。";
+    if (stored) {
+      analyzedLines = null;
+      saveButton.classList.add("hidden");
+      statusElement.textContent = "解析とPostgreSQL保存が完了しました。";
+    } else {
+      saveButton.classList.remove("hidden");
+      statusElement.textContent = "解析が完了しました。内容を確認してPostgreSQL保存を実行してください。";
+    }
     resultCard.classList.remove("hidden");
   } catch (error) {
     if (API_KEY_RETRY_CODES.has(error.code)) {

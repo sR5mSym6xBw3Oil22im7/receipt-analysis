@@ -12,7 +12,7 @@ Gemini APIキー用の環境変数は定義しない。Backend運用に必要な
 - `DB_PASSWORD`
 - `APP_FRONTEND_ORIGIN`
 
-Geminiモデルは `src/main/resources/application.yml` で `gemini-2.5-flash-lite` に固定する。
+Geminiモデルは `src/main/resources/application.yml` で `gemini-3.5-flash-lite` に固定する。
 
 ## Gemini APIキー
 `POST /api/receipts` のmultipart項目 `geminiApiKey` は必須。

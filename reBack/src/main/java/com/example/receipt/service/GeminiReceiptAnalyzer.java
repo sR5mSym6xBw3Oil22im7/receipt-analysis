@@ -13,6 +13,8 @@ import com.google.genai.types.Type;
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -22,6 +24,7 @@ import java.util.Objects;
 
 @Service
 public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeminiReceiptAnalyzer.class);
     private static final String PROMPT = """
             この画像はレシートです。印字されている文字列を上から下へ読み取り、
             1行ごとに lines 配列へ格納してください。
@@ -34,7 +37,7 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
     private final Gson gson = new Gson();
 
     public GeminiReceiptAnalyzer(
-            @Value("${gemini.model:gemini-2.5-flash-lite}") String model) {
+            @Value("${gemini.model:gemini-3.5-flash-lite}") String model) {
         this.model = model;
     }
 
@@ -119,6 +122,8 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
         } catch (ApiException e) {
             throw mapApiException(e);
         } catch (Exception e) {
+            LOGGER.error("Gemini receipt analysis failed: model={}, mimeType={}, imageBytes={}, exception={}, message={}",
+                    model, mimeType, imageBytes.length, e.getClass().getName(), e.getMessage());
             throw new ReceiptException(
                     HttpStatus.BAD_GATEWAY,
                     "GEMINI_API_ERROR",
@@ -128,6 +133,12 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
     }
 
     static ReceiptException mapApiException(ApiException e) {
+        String apiStatus = e.status() == null ? "" : e.status();
+        String apiMessage = e.message() == null ? "" : e.message();
+        String normalizedMessage = apiMessage.toLowerCase(java.util.Locale.ROOT);
+        LOGGER.warn("Gemini API rejected request: code={}, status={}, message={}",
+                e.code(), apiStatus, apiMessage);
+
         if (e.code() == 429 || "RESOURCE_EXHAUSTED".equalsIgnoreCase(e.status())) {
             return new ReceiptException(
                     HttpStatus.TOO_MANY_REQUESTS,
@@ -136,7 +147,10 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
             );
         }
 
-        if (e.code() == 401 || e.code() == 403) {
+        if (e.code() == 401 || e.code() == 403
+                || normalizedMessage.contains("api key")
+                || normalizedMessage.contains("apikey")
+                || normalizedMessage.contains("api_key")) {
             return new ReceiptException(
                     HttpStatus.UNAUTHORIZED,
                     "GEMINI_API_KEY_REJECTED",
@@ -145,9 +159,11 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
         }
 
         return new ReceiptException(
-                HttpStatus.BAD_GATEWAY,
+                e.code() >= 400 && e.code() < 500 ? HttpStatus.BAD_REQUEST : HttpStatus.BAD_GATEWAY,
                 "GEMINI_API_ERROR",
-                "Gemini APIでレシート解析に失敗しました。"
+                e.code() >= 400 && e.code() < 500
+                        ? "Gemini APIへのリクエストが拒否されました。APIキー、モデル、画像形式を確認してください。"
+                        : "Gemini APIでレシート解析に失敗しました。"
         );
     }
 
