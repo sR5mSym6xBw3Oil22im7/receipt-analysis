@@ -1,0 +1,15 @@
+Backend no-analysis-store static verification
+1) analyzeAndStore must be absent:
+PASS: analyzeAndStore absent
+2) root multipart POST /api/receipts must be absent:
+PASS: legacy root multipart POST absent
+3) /analyze calls analyze only:
+54:    @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+58:        return ResponseEntity.ok(receiptService.analyze(file, geminiApiKey));
+4) only /save calls store:
+61:    @PostMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_VALUE)
+63:        return ResponseEntity.ok(receiptService.store(request.lines()));
+5) frontend analyze endpoint:
+105:  return fetch(`${API_BASE_URL}/api/receipts/analyze`, {
+6) frontend save endpoint:
+128:  const response = await fetch(`${API_BASE_URL}/api/receipts/save`, {

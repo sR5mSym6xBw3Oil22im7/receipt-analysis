@@ -11,6 +11,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -19,6 +20,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -46,27 +48,81 @@ class ReceiptControllerIntegrationTest {
     }
 
     @Test
-    void uploadCallsAnalyzerAndCreatesReceiptTable() throws Exception {
+    void legacyRootUploadEndpointCannotCreateReceiptTable() throws Exception {
         int before = receiptTableCount();
-        MockMultipartFile file = sampleFile();
 
         mockMvc.perform(multipart("/api/receipts")
-                        .file(file)
+                        .file(sampleFile())
                         .param("geminiApiKey", "web-key"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.tableName").value(org.hamcrest.Matchers.matchesPattern("receipt_[0-9a-f]{32}")))
-                .andExpect(jsonPath("$.lineCount").value(3))
-                .andExpect(jsonPath("$.lines[0]").value("SAMPLE STORE"));
+                .andExpect(status().isMethodNotAllowed());
 
-        assertThat(receiptTableCount()).isEqualTo(before + 1);
-        assertThat(analyzer.lastGeminiApiKey).isEqualTo("web-key");
+        assertThat(receiptTableCount()).isEqualTo(before);
+        assertThat(analyzer.lastGeminiApiKey).isNull();
     }
 
     @Test
-    void uploadPassesWebApiKeyToAnalyzer() throws Exception {
+    void analyzeDoesNotCreateReceiptTable() throws Exception {
+        int before = receiptTableCount();
+
+        mockMvc.perform(multipart("/api/receipts/analyze")
+                        .file(sampleFile())
+                        .param("geminiApiKey", "web-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lines[0]").value("SAMPLE STORE"));
+
+        assertThat(receiptTableCount()).isEqualTo(before);
+    }
+
+    @Test
+    void saveRejectsDuplicateWithoutCreatingSecondTable() throws Exception {
+        String requestBody = """
+                {"lines":["SAMPLE STORE","ITEM 100","TOTAL 100"]}
+                """;
+        int before = receiptTableCount();
+
+        mockMvc.perform(post("/api/receipts/save")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lineCount").value(3));
+
+        mockMvc.perform(post("/api/receipts/save")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("DUPLICATE_RECEIPT"));
+
+        assertThat(receiptTableCount()).isEqualTo(before + 1);
+    }
+
+    @Test
+    void duplicateCheckIgnoresNonReceiptManagementTablesAndReturnsDuplicate() throws Exception {
+        String requestBody = """
+                {"lines":["SAMPLE STORE","ITEM 100","TOTAL 100"]}
+                """;
+
+        mockMvc.perform(post("/api/receipts/save")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk());
+
+        jdbcTemplate.execute("CREATE TABLE receipt_analysis_drafts (id BIGINT PRIMARY KEY)");
+        jdbcTemplate.execute("CREATE TABLE receipt_uniqueness_registry (id BIGINT PRIMARY KEY)");
+
+        mockMvc.perform(post("/api/receipts/check-duplicate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.duplicate").value(true));
+
+        assertThat(receiptTableCount()).isEqualTo(3);
+    }
+
+    @Test
+    void analyzePassesWebApiKeyToAnalyzer() throws Exception {
         MockMultipartFile file = sampleFile();
 
-        mockMvc.perform(multipart("/api/receipts")
+        mockMvc.perform(multipart("/api/receipts/analyze")
                         .file(file)
                         .param("geminiApiKey", "web-key-2"))
                 .andExpect(status().isOk());
@@ -75,10 +131,10 @@ class ReceiptControllerIntegrationTest {
     }
 
     @Test
-    void uploadRequiresWebApiKey() throws Exception {
+    void analyzeRequiresWebApiKey() throws Exception {
         MockMultipartFile file = sampleFile();
 
-        mockMvc.perform(multipart("/api/receipts").file(file))
+        mockMvc.perform(multipart("/api/receipts/analyze").file(file))
                 .andExpect(status().isBadRequest());
     }
 

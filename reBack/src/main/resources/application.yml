@@ -11,6 +11,9 @@ spring:
     multipart:
       max-file-size: 5MB
       max-request-size: 5MB
+  jdbc:
+    template:
+      query-timeout: 20s
 
 app:
   frontend-origin: ${APP_FRONTEND_ORIGIN:http://localhost:5500}

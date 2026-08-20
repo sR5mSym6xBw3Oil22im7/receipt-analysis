@@ -59,4 +59,17 @@ class ReceiptTableRepositoryTest {
         assertThat(detail.lines()).extracting(line -> line.text())
                 .containsExactly("STORE A", "TOTAL 100");
     }
+    @Test
+    void duplicateLookupIgnoresManagementTablesStartingWithReceiptPrefix() {
+        String receiptTable = repository.createReceiptTableAndInsert(List.of("STORE A", "TOTAL 100"));
+        jdbcTemplate.execute("CREATE TABLE receipt_analysis_drafts (id BIGINT PRIMARY KEY)");
+        jdbcTemplate.execute("CREATE TABLE receipt_uniqueness_registry (id BIGINT PRIMARY KEY)");
+
+        assertThat(repository.receiptExists(List.of("STORE A", "TOTAL 100"))).isTrue();
+        assertThat(repository.receiptExists(List.of("STORE B", "TOTAL 200"))).isFalse();
+        assertThat(repository.findAllReceiptTables())
+                .extracting(ReceiptSummary::tableName)
+                .containsExactly(receiptTable);
+    }
+
 }

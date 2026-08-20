@@ -11,7 +11,7 @@
     <p><a href="./index.html">← メニューへ戻る</a></p>
     <section class="card">
       <h1>レシート解析</h1>
-      <p>JPEG / PNG のレシート画像を最大5枚選択し、Gemini APIキーを入力してください。</p>
+      <p>JPEG / PNG のレシート画像を最大5枚選択し、Gemini APIキーを入力してください。「解析」は文字抽出と表示だけを行い、PostgreSQLには登録しません。内容を確認後、「PostgreSQLへ保存」を押すと重複を除外して未登録分だけ保存します。</p>
       <form id="receipt-form">
         <div class="file-input-list">
           <div class="file-picker-row"><label class="file-picker-button" for="receipt-file-1">ファイルを選択</label><input id="receipt-file-1" name="file" type="file" accept="image/jpeg,image/png"><span id="receipt-file-name-1" class="selected-file-name">未選択</span></div>
@@ -28,18 +28,19 @@
           </div>
           <p id="api-key-note" class="help-text">この値だけをGemini API呼び出しに使用します。APIキーは保存しません。</p>
         </div>
-        <button id="submit-button" type="submit">解析</button>
+        <div class="button-row">
+          <button id="submit-button" type="submit">解析</button>
+          <button id="save-button" class="secondary-button" type="button" disabled>PostgreSQLへ保存</button>
+        </div>
       </form>
       <p id="status" class="status" aria-live="polite"></p>
     </section>
     <section id="result-card" class="card hidden" aria-live="polite">
       <h2>解析結果</h2>
       <div id="receipt-results"></div>
-      <button id="save-button" type="button" class="hidden">PostgreSQL保存</button>
-      <p id="save-status" class="status hidden" aria-live="polite"></p>
     </section>
   </main>
   <script src="./config.js"></script>
-  <script src="./app.js"></script>
+  <script src="./app.js?v=20260821-4"></script>
 </body>
 </html>

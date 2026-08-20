@@ -1,0 +1,7 @@
+PASS: FE auto save endpoint
+PASS: FE handles duplicate code
+PASS: FE continues loop after duplicate
+PASS: FE no manual save button
+PASS: BE checks existing receipt before create
+PASS: BE duplicate returns conflict
+PASS: BE integration duplicate test present

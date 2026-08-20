@@ -51,13 +51,6 @@ public class ReceiptController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ReceiptUploadResponse> upload(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("geminiApiKey") String geminiApiKey) throws IOException {
-        return ResponseEntity.ok(receiptService.analyzeAndStore(file, geminiApiKey));
-    }
-
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ReceiptText> analyze(
             @RequestParam("file") MultipartFile file,

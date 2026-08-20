@@ -2,93 +2,99 @@ TAP version 13
 # Subtest: analysis only displays text; save skips duplicate files 2 and 3 and stores 1, 4 and 5
 ok 1 - analysis only displays text; save skips duplicate files 2 and 3 and stores 1, 4 and 5
   ---
-  duration_ms: 5.615243
+  duration_ms: 5.757255
   type: 'test'
   ...
 # Subtest: save still treats a 409 after duplicate check as duplicate and continues
 ok 2 - save still treats a 409 after duplicate check as duplicate and continues
   ---
-  duration_ms: 2.009709
+  duration_ms: 2.085993
   type: 'test'
   ...
 # Subtest: frontend accepts JPEG and PNG
 ok 3 - frontend accepts JPEG and PNG
   ---
-  duration_ms: 0.795884
+  duration_ms: 0.810565
+  type: 'test'
+  ...
+# Subtest: upload page cache-busts app.js so old auto-save code is not reused
+ok 4 - upload page cache-busts app.js so old auto-save code is not reused
+  ---
+  duration_ms: 0.106829
   type: 'test'
   ...
 # Subtest: frontend posts multipart data to the receipt endpoint
-ok 4 - frontend posts multipart data to the receipt endpoint
+ok 5 - frontend posts multipart data to the receipt endpoint
   ---
-  duration_ms: 0.214559
+  duration_ms: 0.211314
   type: 'test'
   ...
 # Subtest: frontend keeps each selected receipt result separate
-ok 5 - frontend keeps each selected receipt result separate
+ok 6 - frontend keeps each selected receipt result separate
   ---
-  duration_ms: 0.153338
+  duration_ms: 0.110074
   type: 'test'
   ...
 # Subtest: analysis and PostgreSQL save are separate operations
-ok 6 - analysis and PostgreSQL save are separate operations
+ok 7 - analysis and PostgreSQL save are separate operations
   ---
-  duration_ms: 0.160648
+  duration_ms: 0.179226
   type: 'test'
   ...
 # Subtest: save button skips duplicates and continues with later receipts
-ok 7 - save button skips duplicates and continues with later receipts
+ok 8 - save button skips duplicates and continues with later receipts
   ---
-  duration_ms: 0.138516
+  duration_ms: 0.136533
   type: 'test'
   ...
 # Subtest: frontend has a configurable Render backend URL
-ok 8 - frontend has a configurable Render backend URL
+ok 9 - frontend has a configurable Render backend URL
   ---
-  duration_ms: 0.092027
+  duration_ms: 0.08104
   type: 'test'
   ...
 # Subtest: frontend requires a masked Gemini API key
-ok 9 - frontend requires a masked Gemini API key
+ok 10 - frontend requires a masked Gemini API key
   ---
-  duration_ms: 0.11441
+  duration_ms: 0.106979
   type: 'test'
   ...
 # Subtest: frontend always sends the entered Gemini API key
-ok 10 - frontend always sends the entered Gemini API key
+ok 11 - frontend always sends the entered Gemini API key
   ---
-  duration_ms: 0.090364
+  duration_ms: 0.230322
   type: 'test'
   ...
 # Subtest: frontend focuses API key input when Gemini quota is exhausted
-ok 11 - frontend focuses API key input when Gemini quota is exhausted
+ok 12 - frontend focuses API key input when Gemini quota is exhausted
   ---
-  duration_ms: 0.22882
+  duration_ms: 0.314068
   type: 'test'
   ...
 # Subtest: frontend does not persist the Gemini API key in browser storage
-ok 12 - frontend does not persist the Gemini API key in browser storage
+ok 13 - frontend does not persist the Gemini API key in browser storage
   ---
-  duration_ms: 0.411252
+  duration_ms: 0.179838
   type: 'test'
   ...
 # Subtest: index links to upload and select pages
-ok 13 - index links to upload and select pages
+ok 14 - index links to upload and select pages
   ---
-  duration_ms: 0.197634
+  duration_ms: 0.077736
   type: 'test'
   ...
 # Subtest: select page loads receipt list and detail bubble
-ok 14 - select page loads receipt list and detail bubble
+ok 15 - select page loads receipt list and detail bubble
   ---
-  duration_ms: 0.126828
+  duration_ms: 0.830956
   type: 'test'
   ...
-1..14
-# tests 14
+1..15
+# tests 15
 # suites 0
-# pass 14
+# pass 15
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 50.943795
+# duration_ms 61.729847

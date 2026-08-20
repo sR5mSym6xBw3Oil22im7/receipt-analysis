@@ -4,14 +4,41 @@ const apiKeyInput = document.getElementById("gemini-api-key");
 const clearApiKeyButton = document.getElementById("clear-api-key");
 const submitButton = document.getElementById("submit-button");
 const saveButton = document.getElementById("save-button");
-const saveStatusElement = document.getElementById("save-status");
 const statusElement = document.getElementById("status");
 const resultCard = document.getElementById("result-card");
 const receiptResultsElement = document.getElementById("receipt-results");
 let analyzedReceipts = [];
+let busy = false;
+
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8080";
+const SAVE_REQUEST_TIMEOUT_MS = 30000;
+const API_KEY_RETRY_CODES = new Set([
+  "GEMINI_QUOTA_EXCEEDED",
+  "GEMINI_API_KEY_REJECTED",
+  "GEMINI_API_KEY_MISSING",
+  "INVALID_GEMINI_API_KEY"
+]);
+
+function hasPendingReceipts() {
+  return analyzedReceipts.some((receipt) => !receipt.stored && !receipt.duplicate);
+}
+
+function updateSaveButton() {
+  saveButton.disabled = busy || !hasPendingReceipts();
+}
+
+function invalidateAnalysis() {
+  analyzedReceipts = [];
+  receiptResultsElement.replaceChildren();
+  resultCard.classList.add("hidden");
+  statusElement.textContent = "";
+  updateSaveButton();
+}
 
 fileInputs.forEach((input, index) => {
   input.addEventListener("change", () => {
+    invalidateAnalysis();
+
     const selectedFile = input.files?.[0];
     const nameElement = document.getElementById(`receipt-file-name-${index + 1}`);
     if (!selectedFile) {
@@ -42,22 +69,12 @@ fileInputs.forEach((input, index) => {
   });
 });
 
-const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8080";
-const API_KEY_RETRY_CODES = new Set([
-  "GEMINI_QUOTA_EXCEEDED",
-  "GEMINI_API_KEY_REJECTED",
-  "GEMINI_API_KEY_MISSING",
-  "INVALID_GEMINI_API_KEY"
-]);
-
-function setBusy(busy) {
+function setBusy(mode) {
+  busy = Boolean(mode);
   submitButton.disabled = busy;
-  submitButton.textContent = busy ? "解析中..." : "解析";
-}
-
-function setSaveBusy(busy) {
-  saveButton.disabled = busy;
-  saveButton.textContent = busy ? "保存中..." : "PostgreSQL保存";
+  submitButton.textContent = mode === "analyze" ? "解析中..." : "解析";
+  saveButton.textContent = mode === "save" ? "保存中..." : "PostgreSQLへ保存";
+  updateSaveButton();
 }
 
 function showApiKeyRetry(errorCode, fallbackMessage) {
@@ -66,19 +83,19 @@ function showApiKeyRetry(errorCode, fallbackMessage) {
 
   if (errorCode === "GEMINI_QUOTA_EXCEEDED") {
     statusElement.textContent =
-      "Gemini APIの利用上限に達しました。次のAPIキーへ入れ替え、同じ画像のまま再度実行してください。";
+      "Gemini APIの利用上限に達しました。次のAPIキーへ入れ替え、同じ画像のまま再度解析してください。";
     return;
   }
 
   if (errorCode === "GEMINI_API_KEY_REJECTED") {
     statusElement.textContent =
-      "Gemini APIキーが利用できません。別のAPIキーへ入れ替え、同じ画像のまま再度実行してください。";
+      "Gemini APIキーが利用できません。別のAPIキーへ入れ替え、同じ画像のまま再度解析してください。";
     return;
   }
 
   if (errorCode === "GEMINI_API_KEY_MISSING" || errorCode === "INVALID_GEMINI_API_KEY") {
     statusElement.textContent =
-      "Gemini APIキーを確認して再度実行してください。";
+      "Gemini APIキーを確認して再度解析してください。";
     return;
   }
 
@@ -86,34 +103,63 @@ function showApiKeyRetry(errorCode, fallbackMessage) {
 }
 
 async function analyzeReceipt(formData) {
-  const analyzeResponse = await fetch(`${API_BASE_URL}/api/receipts/analyze`, {
+  return fetch(`${API_BASE_URL}/api/receipts/analyze`, {
     method: "POST",
     body: formData
   });
-  return { response: analyzeResponse, stored: false };
+}
+
+async function fetchSaveApi(url, options) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), SAVE_REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error(
+        "バックエンドサーバーから応答がありません。通信状態を確認して、再度「PostgreSQLへ保存」を押してください。"
+      );
+      timeoutError.code = "BACKEND_TIMEOUT";
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function readJsonResponse(response) {
+  return response.json().catch(() => ({}));
 }
 
 async function checkDuplicate(lines) {
-  const response = await fetch(`${API_BASE_URL}/api/receipts/check-duplicate`, {
+  const response = await fetchSaveApi(`${API_BASE_URL}/api/receipts/check-duplicate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ lines })
   });
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.message || `HTTP ${response.status}`);
-  return body.duplicate === true;
-}
-
-async function saveReceipt(lines) {
-  const response = await fetch(`${API_BASE_URL}/api/receipts/save`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lines })
-  });
-  const body = await response.json().catch(() => ({}));
+  const body = await readJsonResponse(response);
   if (!response.ok) {
     const error = new Error(body.message || `HTTP ${response.status}`);
     error.code = body.code || "";
+    error.httpStatus = response.status;
+    throw error;
+  }
+  return Boolean(body.duplicate);
+}
+
+async function saveReceipt(lines) {
+  const response = await fetchSaveApi(`${API_BASE_URL}/api/receipts/save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lines })
+  });
+  const body = await readJsonResponse(response);
+  if (!response.ok) {
+    const error = new Error(body.message || `HTTP ${response.status}`);
+    error.code = body.code || "";
+    error.httpStatus = response.status;
     throw error;
   }
   return body;
@@ -125,18 +171,40 @@ function renderReceiptResults(receipts) {
     const result = document.createElement("article");
     result.className = "receipt-result";
     const heading = document.createElement("h3");
-    heading.textContent = `レシート画像${index + 1}`;
-    const meta = document.createElement("p");
-    meta.className = "help-text";
-    meta.textContent = receipt.duplicate
-      ? `登録済みのため保存しませんでした / ${receipt.lines.length}行`
-      : `${receipt.tableName || "未保存"} / ${receipt.lines.length}行`;
-    if (receipt.duplicate) meta.classList.add("error-message");
+    heading.textContent = `レシート画像${receipt.fileNumber ?? index + 1}`;
     const text = document.createElement("pre");
     text.textContent = receipt.lines.join("\n");
-    result.append(heading, meta, text);
+
+    result.append(heading);
+    if (receipt.duplicate) {
+      const warning = document.createElement("p");
+      warning.className = "help-text";
+      warning.textContent = "既存データと重複するため、PostgreSQLへ保存しませんでした。";
+      warning.classList.add("error-message");
+      result.append(warning);
+    }
+    result.append(text);
     receiptResultsElement.append(result);
   });
+}
+
+function buildSaveCompletionMessage(receipts) {
+  const storedNumbers = receipts
+    .filter((receipt) => receipt.stored)
+    .map((receipt) => receipt.fileNumber);
+
+  if (storedNumbers.length) {
+    return `画像${storedNumbers.join("、")}をPostgreSQLへ保存しました。`;
+  }
+
+  const duplicateNumbers = receipts
+    .filter((receipt) => receipt.duplicate)
+    .map((receipt) => receipt.fileNumber);
+  if (duplicateNumbers.length) {
+    return `警告: 画像${duplicateNumbers.join("、")}は既存データと重複するため、PostgreSQLへ保存しませんでした。`;
+  }
+
+  return "PostgreSQLへ保存する対象がありません。";
 }
 
 clearApiKeyButton.addEventListener("click", () => {
@@ -147,11 +215,10 @@ clearApiKeyButton.addEventListener("click", () => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   resultCard.classList.add("hidden");
-  saveButton.classList.add("hidden");
-  saveStatusElement.classList.add("hidden");
   analyzedReceipts = [];
   statusElement.classList.remove("error-message");
   statusElement.textContent = "";
+  updateSaveButton();
 
   const geminiApiKey = apiKeyInput.value.trim();
   if (!geminiApiKey) {
@@ -160,89 +227,115 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  const files = fileInputs.map((input) => input.files?.[0]).filter(Boolean);
-  if (!files.length) {
+  const selectedFiles = fileInputs
+    .map((input, index) => ({ file: input.files?.[0], fileNumber: index + 1 }))
+    .filter((entry) => Boolean(entry.file));
+  if (!selectedFiles.length) {
     statusElement.textContent = "画像ファイルを1枚以上選択してください。";
     return;
   }
 
-  setBusy(true);
-  statusElement.textContent = `${files.length}枚のレシートを解析しています。`;
+  setBusy("analyze");
+  statusElement.textContent = "";
 
   try {
-    const analyzedResults = [];
-    for (const [index, file] of files.entries()) {
+    for (const { file, fileNumber } of selectedFiles) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("geminiApiKey", geminiApiKey);
-      const result = await analyzeReceipt(formData);
-      const body = await result.response.json().catch(() => ({}));
-      if (!result.response.ok) {
-        const error = new Error(body.message || `HTTP ${result.response.status}`);
+
+      const analyzeResponse = await analyzeReceipt(formData);
+      const body = await analyzeResponse.json().catch(() => ({}));
+      if (!analyzeResponse.ok) {
+        const error = new Error(body.message || `HTTP ${analyzeResponse.status}`);
         error.code = body.code || "";
-        error.httpStatus = result.response.status;
-        error.fileNumber = index + 1;
+        error.httpStatus = analyzeResponse.status;
+        error.fileNumber = fileNumber;
         throw error;
       }
-      const lines = Array.isArray(body.lines) ? body.lines : [];
-      analyzedResults.push({
-        lines,
-        tableName: body.tableName || "",
-        stored: result.stored,
-        duplicate: await checkDuplicate(lines)
+
+      analyzedReceipts.push({
+        fileNumber,
+        lines: Array.isArray(body.lines) ? body.lines : [],
+        tableName: "",
+        stored: false,
+        duplicate: false
       });
+      renderReceiptResults(analyzedReceipts);
+      resultCard.classList.remove("hidden");
     }
 
-    analyzedReceipts = analyzedResults;
-    renderReceiptResults(analyzedReceipts);
-    const duplicateNumbers = analyzedReceipts
-      .map((receipt, index) => receipt.duplicate ? index + 1 : null)
-      .filter(Boolean);
-    const pendingReceipts = analyzedReceipts.filter((receipt) => !receipt.stored && !receipt.duplicate);
-    if (duplicateNumbers.length) {
-      statusElement.textContent = `画像${duplicateNumbers.join("、")}は同じレシートデータがすでに登録済みのため、登録対象から外しました。`;
-    }
-    if (pendingReceipts.length) {
-      saveButton.classList.remove("hidden");
-      if (!duplicateNumbers.length) {
-        statusElement.textContent = `${files.length}枚の解析が完了しました。内容を確認してPostgreSQL保存を実行してください。`;
-      }
-    } else if (!duplicateNumbers.length) {
-      statusElement.textContent = `${files.length}枚の解析が完了しました。`;
-    }
-    resultCard.classList.remove("hidden");
+    statusElement.textContent = `${analyzedReceipts.length}枚の解析が完了しました。`;
   } catch (error) {
     if (API_KEY_RETRY_CODES.has(error.code)) {
       showApiKeyRetry(error.code, error.message);
     } else {
       const fileMessage = error.fileNumber ? `（画像${error.fileNumber}）` : "";
-      statusElement.textContent = `エラー${fileMessage}: ${error.message}`;
+      statusElement.textContent = `解析エラー${fileMessage}: ${error.message}`;
+    }
+
+    if (analyzedReceipts.length) {
+      renderReceiptResults(analyzedReceipts);
+      resultCard.classList.remove("hidden");
     }
   } finally {
-    setBusy(false);
+    setBusy(null);
   }
 });
 
 saveButton.addEventListener("click", async () => {
-  const receiptsToSave = analyzedReceipts.filter((receipt) => !receipt.stored && !receipt.duplicate);
-  if (!receiptsToSave.length) return;
+  if (!hasPendingReceipts()) {
+    statusElement.textContent = "PostgreSQLへ保存する未保存の解析結果がありません。先に解析してください。";
+    updateSaveButton();
+    return;
+  }
 
-  setSaveBusy(true);
-  statusElement.textContent = "PostgreSQLへ保存しています。";
+  statusElement.classList.remove("error-message");
+  setBusy("save");
+  statusElement.textContent = "";
+
   try {
-    for (const receipt of receiptsToSave) {
-      const saved = await saveReceipt(receipt.lines);
-      receipt.tableName = saved.tableName;
-      receipt.stored = true;
+    for (const receipt of analyzedReceipts) {
+      if (receipt.stored || receipt.duplicate) continue;
+
+      statusElement.textContent = `画像${receipt.fileNumber}の重複チェック中です。`;
+      let duplicate = await checkDuplicate(receipt.lines);
+      if (duplicate) {
+        receipt.duplicate = true;
+        renderReceiptResults(analyzedReceipts);
+        statusElement.textContent = `画像${receipt.fileNumber}は既存データと重複するため、保存しませんでした。`;
+        continue;
+      }
+
+      try {
+        statusElement.textContent = `画像${receipt.fileNumber}をPostgreSQLへ保存中です。`;
+        const saved = await saveReceipt(receipt.lines);
+        receipt.tableName = saved.tableName || "";
+        receipt.stored = true;
+      } catch (error) {
+        // 重複チェック直後に別処理が同じレシートを保存した場合も二重登録しない。
+        if (error.code === "DUPLICATE_RECEIPT" || error.httpStatus === 409) {
+          receipt.duplicate = true;
+          renderReceiptResults(analyzedReceipts);
+          statusElement.textContent = `画像${receipt.fileNumber}は既存データと重複するため、保存しませんでした。`;
+        } else {
+          error.fileNumber = receipt.fileNumber;
+          throw error;
+        }
+      }
+
+      renderReceiptResults(analyzedReceipts);
     }
-    renderReceiptResults(analyzedReceipts);
-    saveButton.classList.add("hidden");
-    saveStatusElement.textContent = `${receiptsToSave.length}件のレシートをPostgreSQLへ保存しました。`;
-    saveStatusElement.classList.remove("hidden");
-    analyzedReceipts = [];
+
+    statusElement.textContent = buildSaveCompletionMessage(analyzedReceipts);
   } catch (error) {
-    statusElement.textContent = `エラー: ${error.message}`;
+    const fileMessage = error.fileNumber ? `（画像${error.fileNumber}）` : "";
+    statusElement.textContent = `保存エラー${fileMessage}: ${error.message}`;
   } finally {
-    setSaveBusy(false);
+    renderReceiptResults(analyzedReceipts);
+    resultCard.classList.remove("hidden");
+    setBusy(null);
   }
 });
+
+updateSaveButton();

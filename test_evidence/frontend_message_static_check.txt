@@ -1,0 +1,5 @@
+=== success message static check ===
+243:    statusElement.textContent = `${analyzedReceipts.length}枚の解析が完了しました。`;
+172:    return `画像${storedNumbers.join("、")}をPostgreSQLへ保存しました。`;
+=== removed extra success/progress text check ===
+OK: old success/progress text not found

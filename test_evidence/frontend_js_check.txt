@@ -1,0 +1,4 @@
+Frontend JS syntax: PASS
+Analysis button: /api/receipts/analyze only; no duplicate-check/save call occurs on analysis submit
+Save button: /api/receipts/check-duplicate -> /api/receipts/save only for unique receipts
+Batch duplicate behavior: duplicate files skipped; later unique files continue to save

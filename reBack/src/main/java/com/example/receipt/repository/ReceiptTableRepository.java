@@ -56,16 +56,8 @@ public class ReceiptTableRepository {
     }
 
     public List<ReceiptSummary> findAllReceiptTables() {
-        List<String> tableNames = jdbcTemplate.queryForList(
-                "SELECT LOWER(table_name) FROM information_schema.tables " +
-                        "WHERE LOWER(table_schema) = 'public' AND LOWER(table_name) LIKE 'receipt_%' " +
-                        "ORDER BY table_name DESC",
-                String.class
-        );
-
         List<ReceiptSummary> summaries = new ArrayList<>();
-        for (String tableName : tableNames) {
-            assertSafeTableName(tableName);
+        for (String tableName : findReceiptTableNames()) {
             summaries.add(summaryFor(tableName));
         }
         return summaries;
@@ -86,12 +78,16 @@ public class ReceiptTableRepository {
     }
 
     public boolean receiptExists(List<String> lines) {
-        for (ReceiptSummary summary : findAllReceiptTables()) {
+        // 重複確認では一覧画面用の COUNT/MAX 集計を行わない。
+        // receipt_% という名前の管理テーブルが存在しても、実レシート用の安全なテーブル名だけを対象にする。
+        for (String tableName : findReceiptTableNames()) {
             List<String> existingLines = jdbcTemplate.query(
-                    "SELECT text FROM " + summary.tableName() + " ORDER BY line_no",
+                    "SELECT text FROM " + tableName + " ORDER BY line_no",
                     (rs, rowNum) -> rs.getString("text")
             );
-            if (existingLines.equals(lines)) return true;
+            if (existingLines.equals(lines)) {
+                return true;
+            }
         }
         return false;
     }
@@ -102,6 +98,17 @@ public class ReceiptTableRepository {
             throw new ReceiptException(HttpStatus.NOT_FOUND, "RECEIPT_NOT_FOUND", "指定されたレシートが見つかりません。");
         }
         jdbcTemplate.execute("DROP TABLE " + tableName);
+    }
+
+    private List<String> findReceiptTableNames() {
+        return jdbcTemplate.queryForList(
+                        "SELECT LOWER(table_name) FROM information_schema.tables " +
+                                "WHERE LOWER(table_schema) = 'public' AND LOWER(table_name) LIKE 'receipt_%' " +
+                                "ORDER BY table_name DESC",
+                        String.class
+                ).stream()
+                .filter(ReceiptTableName::isSafe)
+                .toList();
     }
 
     private ReceiptSummary summaryFor(String tableName) {

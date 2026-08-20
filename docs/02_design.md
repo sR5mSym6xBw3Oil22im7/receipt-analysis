@@ -7,7 +7,7 @@ Browser
   |
   | Gemini APIキー + receipt image
   v
-GitHub Pages (reFront / index.html)
+GitHub Pages (reFront / upload.html)
   |
   | HTTPS / multipart/form-data
   | file + geminiApiKey
@@ -21,19 +21,20 @@ Render Web Service (reBack / Spring Boot)
 ```
 
 ## 2. 処理フロー
-1. 利用者がFrontendの `index.html` でGemini APIキーを入力する。
-2. 利用者がJPEG/PNGを1枚選択する。
-3. JavaScriptが `file` と必須の `geminiApiKey` を `multipart/form-data` でBackendへPOSTする。
+1. 利用者がFrontendの `upload.html` でGemini APIキーを入力し、JPEG/PNGを最大5枚選択する。
+2. 「解析」ボタン押下後、Frontendは選択画像を1枚ずつ順番に処理する。
+3. 各画像について `file` と必須の `geminiApiKey` を `POST /api/receipts/analyze` へ送信する。
 4. Backendが空ファイル、MIME Type、5MB上限を検証する。
-5. Backendは受信した `geminiApiKey` を検証し、そのキーだけを使ってGemini APIを呼び出す。Backend既定キーや環境変数へのフォールバックは行わない。
-6. Backendが画像bytesをGemini APIへ送り、構造化JSON `{ "lines": [...] }` を受け取る。
-7. Backendが空行を除去し、最大1000行までに正規化する。
-8. Backendが `receipt_<32桁hex>` のテーブル名を生成する。
-9. Backendが新規テーブルをCREATEする。
-10. 抽出行を `line_no` 順にINSERTする。
-11. Backendがテーブル名・行数・抽出行をFrontendへJSONで返す。
-12. Frontendが結果を表示する。
-13. Geminiが429/RESOURCE_EXHAUSTEDを返した場合はDBテーブルを作成せず、Backendが429 `GEMINI_QUOTA_EXCEEDED` を返す。FrontendはAPIキー欄へフォーカスし、選択済み画像を維持したまま次のキーへ入れ替えて再試行できるようにする。
+5. Backendは受信した `geminiApiKey` だけを使ってGemini APIを呼び出し、構造化JSON `{ "lines": [...] }` を取得する。
+6. Backendが空行を除去し、最大1000行までに正規化してFrontendへ返す。この時点ではPostgreSQLへ保存しない。
+7. 最大5枚の解析完了後、Frontendは抽出テキストを「未保存」として表示し、「PostgreSQLへ保存」ボタンを有効化する。解析ボタン押下だけでは保存処理を行わない。
+8. 利用者が「PostgreSQLへ保存」を押すと、Frontendは未保存の各 `lines` を `POST /api/receipts/check-duplicate` へ順番に送信する。
+9. Backendは既存の全 `receipt_<uuid32>` テーブルの `text` を `line_no` 順に取得し、新しい `lines` と完全一致するレシートがあるか確認する。
+10. 重複する場合、Frontendはその画像を警告表示して `/save` を呼ばず、後続画像の処理を継続する。
+11. 重複しない場合、Frontendは `POST /api/receipts/save` へ `lines` を送信する。Backendは保存直前にも重複を再確認し、一致があれば409 `DUPLICATE_RECEIPT` を返して新規テーブルを作成しない。
+12. 保存可能な場合は `receipt_<32桁hex>` の新規テーブルをCREATEし、抽出行を `line_no` 順にINSERTする。
+13. 最大5枚すべての保存処理後、Frontendは重複で除外した画像番号と、新規登録した画像番号をまとめて表示する。例として5枚中2・3枚目が登録済みなら、2・3枚目は保存せず、1・4・5枚目はPostgreSQLへ保存する。
+14. Geminiが429/RESOURCE_EXHAUSTEDを返した場合は解析時点でその画像のDBテーブルを作成せず、Backendが429 `GEMINI_QUOTA_EXCEEDED` を返す。FrontendはAPIキー欄へフォーカスし、次のAPIキーへ入れ替えて再解析できるようにする。
 
 ## 3. API
 
@@ -42,7 +43,7 @@ Content-Type: `multipart/form-data`
 
 Request:
 - `file`: JPEGまたはPNG 1枚、必須
-- `geminiApiKey`: `reFront/index.html` で入力したGemini APIキー、必須
+- `geminiApiKey`: `reFront/upload.html` で入力したGemini APIキー、必須
 
 Success 200:
 ```json
@@ -62,6 +63,26 @@ Representative errors:
 - 401 `GEMINI_API_KEY_REJECTED`
 - 429 `GEMINI_QUOTA_EXCEEDED`
 - 502 `GEMINI_API_ERROR`
+
+### POST `/api/receipts/analyze`
+Content-Type: `multipart/form-data`
+
+- `file` と `geminiApiKey` を受け取り、Gemini解析結果 `{ "lines": [...] }` だけを返す。
+- PostgreSQLへのCREATE/INSERTは行わない。
+
+### POST `/api/receipts/save`
+Content-Type: `application/json`
+
+Request:
+```json
+{
+  "lines": ["SAMPLE STORE", "ITEM 100", "TOTAL 100"]
+}
+```
+
+- 未登録: 200で新規 `receipt_<uuid32>` テーブルを作成して保存する。
+- 登録済み: 409 `DUPLICATE_RECEIPT` を返し、新しいテーブルを作成しない。
+- Frontendは409を処理停止条件にせず、その画像だけをスキップして次の選択画像へ進む。
 
 ### GET `/api/health`
 RenderのHealth Check用。
@@ -93,7 +114,7 @@ CREATE TABLE receipt_<uuid32> (
 - GeminiのJSON形式が正しくても、Backend側でもnull/空行を除去してからDBへ保存する。
 
 ## 6. APIキー入力/切替UI
-- `reFront/index.html` にGemini APIキー入力欄を常時表示する。
+- `reFront/upload.html` にGemini APIキー入力欄を常時表示する。
 - 入力欄は必須、`type=password`、`autocomplete=off` とする。
 - APIキー未入力ではFrontendから解析を開始しない。
 - 入力値は必ず `geminiApiKey` としてBackendへ送信する。
@@ -110,3 +131,10 @@ CREATE TABLE receipt_<uuid32> (
 - PostgreSQL: Render Postgres
 - Render Blueprint: **`reBack/render.yml`**。Render DashboardのBlueprint Pathに `reBack/render.yml` を指定する。
 - `reBack/render.yml` にGemini APIキー/Geminiモデル用の環境変数は定義しない。
+
+
+## 解析時保存防止
+- 「解析」は `POST /api/receipts/analyze` のみを使用し、PostgreSQLへのINSERT/CREATE TABLEを行わない。
+- 旧 `POST /api/receipts` の解析＋保存エンドポイントは廃止し、解析操作から保存処理へ到達するBackend経路を削除した。
+- PostgreSQLへの追加は「PostgreSQLへ保存」押下時の `POST /api/receipts/save` のみに限定する。
+- 保存時は `POST /api/receipts/check-duplicate` で各解析結果を確認し、重複分だけ除外して未登録分を保存する。

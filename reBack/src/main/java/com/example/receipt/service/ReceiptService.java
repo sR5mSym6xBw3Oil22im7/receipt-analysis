@@ -26,11 +26,6 @@ public class ReceiptService {
         this.repository = repository;
     }
 
-    @Transactional
-    public ReceiptUploadResponse analyzeAndStore(MultipartFile file, String geminiApiKey) throws IOException {
-        return store(analyze(file, geminiApiKey).lines());
-    }
-
     public ReceiptText analyze(MultipartFile file, String geminiApiKey) throws IOException {
         validator.validate(file);
         return receiptAnalyzer.analyze(

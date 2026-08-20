@@ -2,6 +2,7 @@ package com.example.receipt.controller;
 
 import com.example.receipt.dto.ErrorResponse;
 import com.example.receipt.exception.ReceiptException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,6 +25,16 @@ public class ApiExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIOException(IOException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse("FILE_READ_ERROR", "画像ファイルを読み込めませんでした。", OffsetDateTime.now()));
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ErrorResponse> handleDatabaseException(DataAccessException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(
+                        "DATABASE_ERROR",
+                        "PostgreSQLとの通信または重複確認に失敗しました。時間をおいて再度保存してください。",
+                        OffsetDateTime.now()
+                ));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)

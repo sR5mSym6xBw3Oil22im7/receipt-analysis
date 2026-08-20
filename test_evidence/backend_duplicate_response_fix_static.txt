@@ -1,0 +1,61 @@
+Backend duplicate response static validation
+- Duplicate lookup filters receipt table names with ReceiptTableName::isSafe
+110:                .filter(ReceiptTableName::isSafe)
+- receiptExists does not call findAllReceiptTables
+    }
+
+    public boolean receiptExists(List<String> lines) {
+        // 重複確認では一覧画面用の COUNT/MAX 集計を行わない。
+        // receipt_% という名前の管理テーブルが存在しても、実レシート用の安全なテーブル名だけを対象にする。
+        for (String tableName : findReceiptTableNames()) {
+            List<String> existingLines = jdbcTemplate.query(
+                    "SELECT text FROM " + tableName + " ORDER BY line_no",
+                    (rs, rowNum) -> rs.getString("text")
+            );
+            if (existingLines.equals(lines)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+- JDBC query timeout
+16:      query-timeout: 20s
+17-
+18-app:
+- Database exception response
+31:    public ResponseEntity<ErrorResponse> handleDatabaseException(DataAccessException e) {
+32-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+33-                .body(new ErrorResponse(
+34-                        "DATABASE_ERROR",
+35-                        "PostgreSQLとの通信または重複確認に失敗しました。時間をおいて再度保存してください。",
+36-                        OffsetDateTime.now()
+37-                ));
+38-    }
+39-
+- Integration test for receipt_ management tables
+99:    void duplicateCheckIgnoresNonReceiptManagementTablesAndReturnsDuplicate() throws Exception {
+100-        String requestBody = """
+101-                {"lines":["SAMPLE STORE","ITEM 100","TOTAL 100"]}
+102-                """;
+103-
+104-        mockMvc.perform(post("/api/receipts/save")
+105-                        .contentType(MediaType.APPLICATION_JSON)
+106-                        .content(requestBody))
+107-                .andExpect(status().isOk());
+108-
+109-        jdbcTemplate.execute("CREATE TABLE receipt_analysis_drafts (id BIGINT PRIMARY KEY)");
+110-        jdbcTemplate.execute("CREATE TABLE receipt_uniqueness_registry (id BIGINT PRIMARY KEY)");
+111-
+112-        mockMvc.perform(post("/api/receipts/check-duplicate")
+113-                        .contentType(MediaType.APPLICATION_JSON)
+114-                        .content(requestBody))
+115-                .andExpect(status().isOk())
+116-                .andExpect(jsonPath("$.duplicate").value(true));
+117-
+118-        assertThat(receiptTableCount()).isEqualTo(3);
+119-    }
+120-
+121-    @Test
+122-    void analyzePassesWebApiKeyToAnalyzer() throws Exception {
+123-        MockMultipartFile file = sampleFile();
