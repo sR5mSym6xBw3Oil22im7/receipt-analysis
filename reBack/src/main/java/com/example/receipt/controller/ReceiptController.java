@@ -4,6 +4,8 @@ import com.example.receipt.dto.ReceiptUploadResponse;
 import com.example.receipt.dto.ReceiptSaveRequest;
 import com.example.receipt.dto.ReceiptText;
 import com.example.receipt.dto.ReceiptDetail;
+import com.example.receipt.dto.ReceiptDuplicateCheckRequest;
+import com.example.receipt.dto.ReceiptDuplicateCheckResponse;
 import com.example.receipt.dto.ReceiptSummary;
 import com.example.receipt.repository.ReceiptTableRepository;
 import com.example.receipt.service.ReceiptService;
@@ -66,5 +68,13 @@ public class ReceiptController {
     @PostMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ReceiptUploadResponse> save(@RequestBody ReceiptSaveRequest request) {
         return ResponseEntity.ok(receiptService.store(request.lines()));
+    }
+
+    @PostMapping(value = "/check-duplicate", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ReceiptDuplicateCheckResponse> checkDuplicate(
+            @RequestBody ReceiptDuplicateCheckRequest request) {
+        return ResponseEntity.ok(new ReceiptDuplicateCheckResponse(
+                receiptService.isDuplicate(request.lines())
+        ));
     }
 }

@@ -48,6 +48,34 @@ form {
 }
 
 .file-label { font-weight: 700; }
+.file-input-list { display: grid; gap: 14px; }
+
+.file-picker-row {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.file-picker-button {
+  display: inline-block;
+  box-sizing: border-box;
+  min-width: 136px;
+  padding: 10px 14px;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.file-picker-button:hover { background: #1d4ed8; }
+.selected-file-name { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 
 input[type="file"],
 input[type="password"] {
@@ -56,6 +84,14 @@ input[type="password"] {
   border: 1px solid #9ca3af;
   border-radius: 10px;
   background: #fff;
+}
+
+input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 button {
@@ -98,6 +134,12 @@ button:disabled { cursor: wait; opacity: 0.65; }
 }
 
 .status { min-height: 1.5em; font-weight: 600; }
+.error-message { color: #b91c1c; font-weight: 700; }
+
+.receipt-results { display: grid; gap: 16px; }
+.receipt-result { padding: 14px; border: 1px solid #d1d5db; border-radius: 10px; }
+.receipt-result h3 { margin: 0 0 6px; }
+.receipt-result pre { margin: 10px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .hidden { display: none; }
 

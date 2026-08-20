@@ -85,6 +85,17 @@ public class ReceiptTableRepository {
         return new ReceiptDetail(summary.tableName(), summary.lineCount(), summary.createdAt(), lines);
     }
 
+    public boolean receiptExists(List<String> lines) {
+        for (ReceiptSummary summary : findAllReceiptTables()) {
+            List<String> existingLines = jdbcTemplate.query(
+                    "SELECT text FROM " + summary.tableName() + " ORDER BY line_no",
+                    (rs, rowNum) -> rs.getString("text")
+            );
+            if (existingLines.equals(lines)) return true;
+        }
+        return false;
+    }
+
     public void deleteReceipt(String tableName) {
         assertSafeTableName(tableName);
         if (!tableExists(tableName)) {

@@ -38,6 +38,11 @@ class ReceiptControllerIntegrationTest {
     @BeforeEach
     void resetAnalyzer() {
         analyzer.lastGeminiApiKey = null;
+        jdbcTemplate.queryForList(
+                "SELECT table_name FROM information_schema.tables " +
+                        "WHERE table_schema = 'public' AND table_name LIKE 'receipt_%'",
+                String.class
+        ).forEach(tableName -> jdbcTemplate.execute("DROP TABLE " + tableName));
     }
 
     @Test

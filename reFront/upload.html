@@ -11,10 +11,15 @@
     <p><a href="./index.html">← メニューへ戻る</a></p>
     <section class="card">
       <h1>レシート解析</h1>
-      <p>JPEG / PNG のレシート画像を1枚選択し、Gemini APIキーを入力してください。</p>
+      <p>JPEG / PNG のレシート画像を最大5枚選択し、Gemini APIキーを入力してください。</p>
       <form id="receipt-form">
-        <label class="file-label" for="receipt-file">レシート画像</label>
-        <input id="receipt-file" name="file" type="file" accept="image/jpeg,image/png" required>
+        <div class="file-input-list">
+          <div class="file-picker-row"><label class="file-picker-button" for="receipt-file-1">ファイルを選択</label><input id="receipt-file-1" name="file" type="file" accept="image/jpeg,image/png"><span id="receipt-file-name-1" class="selected-file-name">未選択</span></div>
+          <div class="file-picker-row"><label class="file-picker-button" for="receipt-file-2">ファイルを選択</label><input id="receipt-file-2" name="file" type="file" accept="image/jpeg,image/png"><span id="receipt-file-name-2" class="selected-file-name">未選択</span></div>
+          <div class="file-picker-row"><label class="file-picker-button" for="receipt-file-3">ファイルを選択</label><input id="receipt-file-3" name="file" type="file" accept="image/jpeg,image/png"><span id="receipt-file-name-3" class="selected-file-name">未選択</span></div>
+          <div class="file-picker-row"><label class="file-picker-button" for="receipt-file-4">ファイルを選択</label><input id="receipt-file-4" name="file" type="file" accept="image/jpeg,image/png"><span id="receipt-file-name-4" class="selected-file-name">未選択</span></div>
+          <div class="file-picker-row"><label class="file-picker-button" for="receipt-file-5">ファイルを選択</label><input id="receipt-file-5" name="file" type="file" accept="image/jpeg,image/png"><span id="receipt-file-name-5" class="selected-file-name">未選択</span></div>
+        </div>
         <div id="api-key-panel" class="api-key-panel">
           <label class="file-label" for="gemini-api-key">Gemini APIキー</label>
           <div class="api-key-row">
@@ -29,12 +34,9 @@
     </section>
     <section id="result-card" class="card hidden" aria-live="polite">
       <h2>解析結果</h2>
-      <dl>
-        <div><dt>作成テーブル</dt><dd id="table-name"></dd></div>
-        <div><dt>行数</dt><dd id="line-count"></dd></div>
-      </dl>
-      <pre id="receipt-text"></pre>
+      <div id="receipt-results"></div>
       <button id="save-button" type="button" class="hidden">PostgreSQL保存</button>
+      <p id="save-status" class="status hidden" aria-live="polite"></p>
     </section>
   </main>
   <script src="./config.js"></script>

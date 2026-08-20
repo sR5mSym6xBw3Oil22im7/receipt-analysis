@@ -11,12 +11,37 @@ const config = await readFile(new URL("../config.js", import.meta.url), "utf8");
 
 test("frontend accepts JPEG and PNG", () => {
   assert.match(html, /accept="image\/jpeg,image\/png"/);
+  assert.equal((html.match(/name="file"/g) ?? []).length, 5);
+  assert.equal((html.match(/ファイルを選択/g) ?? []).length, 5);
+  assert.match(html, /selected-file-name/);
+  assert.match(js, /同じファイルが選択されました/);
+  assert.match(js, /lastModified/);
+  assert.match(html + js, /error-message/);
+  assert.match(js, /nameElement\.textContent = "同じファイルが選択されました/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {
   assert.match(js, /FormData/);
   assert.match(js, /\/api\/receipts/);
   assert.match(js, /method:\s*"POST"/);
+});
+
+test("frontend keeps each selected receipt result separate", () => {
+  assert.match(html, /id="receipt-results"/);
+  assert.match(js, /renderReceiptResults/);
+  assert.match(js, /saveReceipt/);
+});
+
+test("frontend skips duplicate receipts while saving other results", () => {
+  assert.match(js, /checkDuplicate/);
+  assert.match(js, /check-duplicate/);
+  assert.match(js, /登録対象から外しました/);
+  assert.match(js, /saveReceipt/);
+});
+
+test("analysis does not fall back to an endpoint that stores receipts", () => {
+  assert.doesNotMatch(js, /Older deployed Backends/);
+  assert.match(js, /return \{ response: analyzeResponse, stored: false \}/);
 });
 
 test("frontend has a configurable Render backend URL", () => {
