@@ -28,8 +28,11 @@ body { margin: 0; }
 .menu-link { padding: 18px; border: 1px solid #bfdbfe; border-radius: 12px; background: #eff6ff; color: #1d4ed8; }
 .menu-link-title { font-size: 1.1rem; font-weight: 700; }
 .receipt-list { display: grid; gap: 10px; }
-.receipt-list-item { width: 100%; text-align: left; border: 1px solid #d1d5db; background: #fff; color: #1d4ed8; }
-.receipt-list-item span { color: #4b5563; font-weight: 400; }
+.receipt-list-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; }
+.receipt-list-info { display: grid; gap: 6px; min-width: 0; }
+.receipt-list-info span { color: #4b5563; font-weight: 400; }
+.button-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.danger-button { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 .detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .receipt-bubble { position: relative; margin-top: 18px; padding: 18px; border-radius: 18px; background: #eef2ff; border: 1px solid #c7d2fe; }
 .receipt-bubble::before { content: ""; position: absolute; top: -10px; left: 28px; width: 18px; height: 18px; background: #eef2ff; border-top: 1px solid #c7d2fe; border-left: 1px solid #c7d2fe; transform: rotate(45deg); }

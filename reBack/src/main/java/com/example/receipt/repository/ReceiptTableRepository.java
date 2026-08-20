@@ -85,6 +85,14 @@ public class ReceiptTableRepository {
         return new ReceiptDetail(summary.tableName(), summary.lineCount(), summary.createdAt(), lines);
     }
 
+    public void deleteReceipt(String tableName) {
+        assertSafeTableName(tableName);
+        if (!tableExists(tableName)) {
+            throw new ReceiptException(HttpStatus.NOT_FOUND, "RECEIPT_NOT_FOUND", "指定されたレシートが見つかりません。");
+        }
+        jdbcTemplate.execute("DROP TABLE " + tableName);
+    }
+
     private ReceiptSummary summaryFor(String tableName) {
         String sql = "SELECT COUNT(*) AS line_count, MAX(created_at) AS created_at FROM " + tableName;
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new ReceiptSummary(
