@@ -1,5 +1,8 @@
 package com.example.receipt.repository;
 
+import com.example.receipt.dto.ReceiptDetail;
+import com.example.receipt.dto.ReceiptLine;
+import com.example.receipt.dto.ReceiptSummary;
 import com.example.receipt.exception.ReceiptException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -8,6 +11,8 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -48,6 +53,55 @@ public class ReceiptTableRepository {
         });
 
         return tableName;
+    }
+
+    public List<ReceiptSummary> findAllReceiptTables() {
+        List<String> tableNames = jdbcTemplate.queryForList(
+                "SELECT LOWER(table_name) FROM information_schema.tables " +
+                        "WHERE LOWER(table_schema) = 'public' AND LOWER(table_name) LIKE 'receipt_%' " +
+                        "ORDER BY table_name DESC",
+                String.class
+        );
+
+        List<ReceiptSummary> summaries = new ArrayList<>();
+        for (String tableName : tableNames) {
+            assertSafeTableName(tableName);
+            summaries.add(summaryFor(tableName));
+        }
+        return summaries;
+    }
+
+    public ReceiptDetail findReceipt(String tableName) {
+        assertSafeTableName(tableName);
+        if (!tableExists(tableName)) {
+            throw new ReceiptException(HttpStatus.NOT_FOUND, "RECEIPT_NOT_FOUND", "指定されたレシートが見つかりません。");
+        }
+
+        String sql = "SELECT line_no, text FROM " + tableName + " ORDER BY line_no";
+        List<ReceiptLine> lines = jdbcTemplate.query(sql, (rs, rowNum) ->
+                new ReceiptLine(rs.getInt("line_no"), rs.getString("text"))
+        );
+        ReceiptSummary summary = summaryFor(tableName);
+        return new ReceiptDetail(summary.tableName(), summary.lineCount(), summary.createdAt(), lines);
+    }
+
+    private ReceiptSummary summaryFor(String tableName) {
+        String sql = "SELECT COUNT(*) AS line_count, MAX(created_at) AS created_at FROM " + tableName;
+        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new ReceiptSummary(
+                tableName,
+                rs.getInt("line_count"),
+                rs.getObject("created_at", OffsetDateTime.class)
+        ));
+    }
+
+    private boolean tableExists(String tableName) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables " +
+                        "WHERE LOWER(table_schema) = 'public' AND LOWER(table_name) = LOWER(?)",
+                Integer.class,
+                tableName
+        );
+        return count != null && count > 0;
     }
 
     static void assertSafeTableName(String tableName) {

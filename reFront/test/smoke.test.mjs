@@ -2,8 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const html = await readFile(new URL("../update.html", import.meta.url), "utf8");
+const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const select = await readFile(new URL("../select.html", import.meta.url), "utf8");
 const js = await readFile(new URL("../app.js", import.meta.url), "utf8");
+const selectJs = await readFile(new URL("../select.js", import.meta.url), "utf8");
 const config = await readFile(new URL("../config.js", import.meta.url), "utf8");
 
 test("frontend accepts JPEG and PNG", () => {
@@ -42,4 +45,16 @@ test("frontend focuses API key input when Gemini quota is exhausted", () => {
 test("frontend does not persist the Gemini API key in browser storage", () => {
   assert.doesNotMatch(js, /localStorage/);
   assert.doesNotMatch(js, /sessionStorage/);
+});
+
+test("index links to update and select pages", () => {
+  assert.match(index, /href="\.\/update\.html"/);
+  assert.match(index, /href="\.\/select\.html"/);
+});
+
+test("select page loads receipt list and detail bubble", () => {
+  assert.match(select, /id="receipt-list"/);
+  assert.match(select, /id="detail-bubble"/);
+  assert.match(selectJs, /\/api\/receipts/);
+  assert.match(selectJs, /detailBubble/);
 });

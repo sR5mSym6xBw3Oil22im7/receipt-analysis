@@ -1,5 +1,7 @@
 package com.example.receipt.repository;
 
+import com.example.receipt.dto.ReceiptDetail;
+import com.example.receipt.dto.ReceiptSummary;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
@@ -45,5 +47,16 @@ class ReceiptTableRepositoryTest {
         assertThat(firstCount).isEqualTo(2);
         assertThat(secondCount).isEqualTo(1);
         assertThat(firstLine).isEqualTo("STORE A");
+
+        List<ReceiptSummary> summaries = repository.findAllReceiptTables();
+        assertThat(summaries).extracting(ReceiptSummary::tableName).contains(first, second);
+        assertThat(summaries).filteredOn(summary -> summary.tableName().equals(first))
+                .singleElement()
+                .satisfies(summary -> assertThat(summary.lineCount()).isEqualTo(2));
+
+        ReceiptDetail detail = repository.findReceipt(first);
+        assertThat(detail.tableName()).isEqualTo(first);
+        assertThat(detail.lines()).extracting(line -> line.text())
+                .containsExactly("STORE A", "TOTAL 100");
     }
 }

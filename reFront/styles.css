@@ -23,6 +23,19 @@ body { margin: 0; }
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
+.home-links { display: grid; gap: 12px; margin-top: 24px; }
+.menu-link, .receipt-list-item { display: grid; gap: 6px; text-decoration: none; }
+.menu-link { padding: 18px; border: 1px solid #bfdbfe; border-radius: 12px; background: #eff6ff; color: #1d4ed8; }
+.menu-link-title { font-size: 1.1rem; font-weight: 700; }
+.receipt-list { display: grid; gap: 10px; }
+.receipt-list-item { width: 100%; text-align: left; border: 1px solid #d1d5db; background: #fff; color: #1d4ed8; }
+.receipt-list-item span { color: #4b5563; font-weight: 400; }
+.detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.receipt-bubble { position: relative; margin-top: 18px; padding: 18px; border-radius: 18px; background: #eef2ff; border: 1px solid #c7d2fe; }
+.receipt-bubble::before { content: ""; position: absolute; top: -10px; left: 28px; width: 18px; height: 18px; background: #eef2ff; border-top: 1px solid #c7d2fe; border-left: 1px solid #c7d2fe; transform: rotate(45deg); }
+.receipt-line { margin: 0; padding: 7px 0; border-bottom: 1px dashed #c7d2fe; white-space: pre-wrap; overflow-wrap: anywhere; }
+.receipt-line:last-child { border-bottom: 0; }
+
 h1, h2 { margin-top: 0; }
 
 form {
