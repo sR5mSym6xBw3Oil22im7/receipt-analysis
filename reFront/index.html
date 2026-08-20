@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>レシート解析</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="container">
+    <section class="card">
+      <h1>レシート解析</h1>
+      <p>JPEG / PNG のレシート画像を1枚選択し、Gemini APIキーを入力してください。</p>
+
+      <form id="receipt-form">
+        <label class="file-label" for="receipt-file">レシート画像</label>
+        <input id="receipt-file" name="file" type="file" accept="image/jpeg,image/png" required>
+
+        <div id="api-key-panel" class="api-key-panel">
+          <label class="file-label" for="gemini-api-key">Gemini APIキー</label>
+          <div class="api-key-row">
+            <input
+              id="gemini-api-key"
+              name="geminiApiKey"
+              type="password"
+              autocomplete="off"
+              spellcheck="false"
+              maxlength="512"
+              aria-describedby="api-key-note"
+              required
+            >
+            <button id="clear-api-key" class="secondary-button" type="button">入力を消去</button>
+          </div>
+          <p id="api-key-note" class="help-text">
+            この値だけをGemini API呼び出しに使用します。APIキーはGitHub Pages、localStorage、sessionStorage、PostgreSQLへ保存しません。利用上限に達した場合は、ここへ次のAPIキーを入力して同じ画像を再実行してください。
+          </p>
+        </div>
+
+        <button id="submit-button" type="submit">解析</button>
+      </form>
+
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+
+    <section id="result-card" class="card hidden" aria-live="polite">
+      <h2>解析結果</h2>
+      <dl>
+        <div><dt>作成テーブル</dt><dd id="table-name"></dd></div>
+        <div><dt>行数</dt><dd id="line-count"></dd></div>
+      </dl>
+      <pre id="receipt-text"></pre>
+      <button id="save-button" type="button" class="hidden">PostgreSQL保存</button>
+    </section>
+  </main>
+
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

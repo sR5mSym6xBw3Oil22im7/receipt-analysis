@@ -1,0 +1,6 @@
+file_count=52
+formats=JPEG:52
+min_bytes=948217
+max_bytes=1726998
+dimensions=1920x2560:29,2560x1920:23
+under_5mb=52/52

@@ -1,0 +1,13 @@
+CHECK-01: PASS - reBack/render.yml exists
+CHECK-02: PASS - root Blueprint files absent
+CHECK-03: PASS - legacy key env reference absent
+CHECK-04: PASS - legacy model env reference absent
+CHECK-05: PASS - legacy API-key config property absent
+CHECK-06: PASS - Render rootDir is reBack
+CHECK-07: PASS - Render has no Gemini env vars
+CHECK-08: PASS - Frontend always sends entered key
+CHECK-09: PASS - Frontend key input is required
+CHECK-10: PASS - Browser Storage unused for key
+CHECK-11: PASS - Gemini model fixed in app config
+CHECK-12: PASS - Gemini env substitution absent
+PASS: frontend-only Gemini API key flow and reBack/render.yml layout

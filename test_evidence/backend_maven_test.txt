@@ -1,0 +1,1 @@
+NOT RUN: mvn command is not installed in this execution environment.

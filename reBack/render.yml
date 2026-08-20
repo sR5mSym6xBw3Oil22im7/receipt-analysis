@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: receipt-reback
+    runtime: docker
+    rootDir: reBack
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_FRONTEND_ORIGIN
+        sync: false
+      - key: DB_HOST
+        fromDatabase:
+          name: receipt-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: receipt-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: receipt-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: receipt-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: receipt-db
+          property: password
+
+databases:
+  - name: receipt-db
+    plan: free
+    postgresMajorVersion: "18"

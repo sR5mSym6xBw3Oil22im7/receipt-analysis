@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: frontend accepts JPEG and PNG
+ok 1 - frontend accepts JPEG and PNG
+  ---
+  duration_ms: 0.628692
+  type: 'test'
+  ...
+# Subtest: frontend posts multipart data to the receipt endpoint
+ok 2 - frontend posts multipart data to the receipt endpoint
+  ---
+  duration_ms: 0.205906
+  type: 'test'
+  ...
+# Subtest: frontend has a configurable Render backend URL
+ok 3 - frontend has a configurable Render backend URL
+  ---
+  duration_ms: 0.095892
+  type: 'test'
+  ...
+# Subtest: frontend requires a masked Gemini API key
+ok 4 - frontend requires a masked Gemini API key
+  ---
+  duration_ms: 0.119888
+  type: 'test'
+  ...
+# Subtest: frontend always sends the entered Gemini API key
+ok 5 - frontend always sends the entered Gemini API key
+  ---
+  duration_ms: 0.202651
+  type: 'test'
+  ...
+# Subtest: frontend focuses API key input when Gemini quota is exhausted
+ok 6 - frontend focuses API key input when Gemini quota is exhausted
+  ---
+  duration_ms: 0.094691
+  type: 'test'
+  ...
+# Subtest: frontend does not persist the Gemini API key in browser storage
+ok 7 - frontend does not persist the Gemini API key in browser storage
+  ---
+  duration_ms: 0.174199
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 97.075277
