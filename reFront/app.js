@@ -159,7 +159,7 @@ async function readJsonResponse(response) {
 async function checkDuplicate(lines) {
   const response = await fetchSaveApi(`${API_BASE_URL}/api/receipts/check-duplicate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json; charset=UTF-8" },
     body: JSON.stringify({ lines })
   });
   const body = await readJsonResponse(response);
@@ -175,7 +175,7 @@ async function checkDuplicate(lines) {
 async function saveReceipt(lines) {
   const response = await fetchSaveApi(`${API_BASE_URL}/api/receipts/save`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json; charset=UTF-8" },
     body: JSON.stringify({ lines })
   });
   const body = await readJsonResponse(response);
