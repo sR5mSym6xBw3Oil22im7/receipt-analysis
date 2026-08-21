@@ -177,15 +177,13 @@ test("analysis only displays text; save skips duplicate files 2 and 3 and stores
   assert.equal(fetchCalls.length, 13);
   assert.equal(
     get("status").textContent,
-    "画像1、4、5をPostgreSQLへ保存しました。"
+    ""
   );
-  assert.match(get("receipt-results").children[1].children[1].textContent, /既存データと重複/);
-  assert.match(get("receipt-results").children[2].children[1].textContent, /既存データと重複/);
-  assert.equal(get("receipt-results").children[0].children.length, 2);
-  assert.equal(get("receipt-results").children[3].children.length, 2);
-  assert.equal(get("receipt-results").children[4].children.length, 2);
+  assert.equal(get("receipt-results").children.length, 0);
+  assert.equal(get("gemini-api-key").value, "test-api-key");
+  assert.equal(get("submit-button").disabled, false);
   assert.equal(get("save-button").disabled, true);
-  assert.equal(get("result-card").classList.contains("hidden"), false);
+  assert.equal(get("result-card").classList.contains("hidden"), true);
 });
 
 test("save still treats a 409 after duplicate check as duplicate and continues", async () => {
@@ -278,7 +276,10 @@ test("save returns a duplicate warning when the receipt is already registered", 
   assert.equal(saveCall, 0);
   assert.equal(
     get("status").textContent,
-    "警告: 画像1は既存データと重複するため、PostgreSQLへ保存しませんでした。"
+    ""
   );
+  assert.equal(get("receipt-results").children.length, 0);
+  assert.equal(get("gemini-api-key").value, "test-api-key");
+  assert.equal(get("result-card").classList.contains("hidden"), true);
   assert.equal(get("save-button").disabled, true);
 });

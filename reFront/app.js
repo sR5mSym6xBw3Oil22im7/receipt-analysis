@@ -35,6 +35,29 @@ function invalidateAnalysis() {
   updateSaveButton();
 }
 
+function resetUploadPagePreservingApiKey() {
+  const geminiApiKey = apiKeyInput.value;
+
+  fileInputs.forEach((input, index) => {
+    input.value = "";
+    const nameElement = document.getElementById(`receipt-file-name-${index + 1}`);
+    nameElement.classList.remove("error-message");
+    nameElement.textContent = "未選択";
+  });
+
+  analyzedReceipts = [];
+  receiptResultsElement.replaceChildren();
+  resultCard.classList.add("hidden");
+  statusElement.classList.remove("error-message");
+  statusElement.textContent = "";
+  apiKeyInput.value = geminiApiKey;
+  busy = false;
+  submitButton.disabled = false;
+  submitButton.textContent = "解析";
+  saveButton.disabled = true;
+  saveButton.textContent = "PostgreSQLへ保存";
+}
+
 fileInputs.forEach((input, index) => {
   input.addEventListener("change", () => {
     invalidateAnalysis();
@@ -332,8 +355,8 @@ saveButton.addEventListener("click", async () => {
     const fileMessage = error.fileNumber ? `（画像${error.fileNumber}）` : "";
     statusElement.textContent = `保存エラー${fileMessage}: ${error.message}`;
   } finally {
-    renderReceiptResults(analyzedReceipts);
-    resultCard.classList.remove("hidden");
+    // 登録成功・失敗のどちらでも、処理完了後に初期状態へ戻す。
+    resetUploadPagePreservingApiKey();
     setBusy(null);
   }
 });

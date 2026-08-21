@@ -22,7 +22,7 @@ test("frontend accepts JPEG and PNG", () => {
 
 
 test("upload page cache-busts app.js so old auto-save code is not reused", () => {
-  assert.match(html, /<script src="\.\/app\.js\?v=20260821-4"><\/script>/);
+  assert.match(html, /<script src="\.\/app\.js\?v=20260821-8"><\/script>/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {
@@ -66,6 +66,8 @@ test("save button skips duplicates and continues with later receipts", () => {
   assert.match(js, /重複チェック中です/);
   assert.match(js, /保存しませんでした/);
   assert.doesNotMatch(js, /PostgreSQLへ追加しました/);
+  assert.match(js, /resetUploadPagePreservingApiKey/);
+  assert.match(js, /apiKeyInput\.value = geminiApiKey/);
 });
 
 test("frontend has a configurable Render backend URL", () => {
