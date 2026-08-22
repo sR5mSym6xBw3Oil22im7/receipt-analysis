@@ -68,4 +68,27 @@ class ReceiptTableRepositoryTest {
         assertThat(detail.lines()).extracting(line -> line.text())
                 .containsExactly("STORE A", "TOTAL 100");
     }
+
+    @Test
+    void deletingReceiptAlsoDeletesItsImageHash() {
+        String sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        repository.reserveImageHash(sha256);
+        String tableName = repository.createReceiptTableAndInsert(List.of("STORE A"), sha256);
+
+        repository.deleteReceipt(tableName);
+
+        Integer hashCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM receipt_image_hash_registry WHERE image_sha256 = ?",
+                Integer.class,
+                sha256
+        );
+        assertThat(hashCount).isZero();
+
+        repository.reserveImageHash(sha256);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM receipt_image_hash_registry WHERE image_sha256 = ?",
+                Integer.class,
+                sha256
+        )).isEqualTo(1);
+    }
 }

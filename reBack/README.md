@@ -31,4 +31,9 @@ mvn test
 ```
 
 ## 保存
-`POST /api/receipts/check-duplicate` と `POST /api/receipts/save` は、`receipt_<uuid32>` 形式に完全一致する実レシートテーブルだけを重複確認対象にする。`receipt_analysis_drafts` や `receipt_uniqueness_registry` など `receipt_` で始まる管理テーブルは対象外とする。重複確認では一覧表示用のCOUNT/MAX集計を行わず、保存APIで既存データと一致した場合は409 `DUPLICATE_RECEIPT` を返して新しいテーブルをCREATEしない。JDBCクエリは20秒でタイムアウトし、DB障害時は503 `DATABASE_ERROR` のJSONを返す。
+
+`POST /api/receipts/analyze` は画像バイト列のSHA-256を計算し、`receipt_image_hash_registry` に登録してレスポンスの `sha256` として返す。同じSHA-256が解析済みまたは保存済みの場合は409 `DUPLICATE_RECEIPT_IMAGE` を返す。`POST /api/receipts/save` は解析レスポンスの `sha256` を受け取り、ハッシュ行に保存先テーブルを紐付ける。
+
+`POST /api/receipts/save` は画像SHA-256を重複確認キーとして使用し、既存ハッシュの場合は409 `DUPLICATE_RECEIPT_IMAGE` を返して新しいテーブルをCREATEしない。JDBCクエリは20秒でタイムアウトし、DB障害時は503 `DATABASE_ERROR` のJSONを返す。
+
+`DELETE /api/receipts/{tableName}` はレシートテーブルと紐付く画像SHA-256を同一トランザクションで削除するため、削除後は同じ画像を再登録できる。

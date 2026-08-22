@@ -139,13 +139,13 @@ async function readJsonResponse(response) {
   return response.json().catch(() => ({}));
 }
 
-async function saveReceipt(lines) {
+async function saveReceipt(lines, sha256) {
   const response = await fetchSaveApi(`${API_BASE_URL}/api/receipts/save`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json; charset=UTF-8",
     },
-    body: JSON.stringify({ lines })
+    body: JSON.stringify({ lines, sha256 })
   });
   const body = await readJsonResponse(response);
   if (!response.ok) {
@@ -235,6 +235,7 @@ form.addEventListener("submit", async (event) => {
       analyzedReceipts.push({
         fileNumber,
         lines: Array.isArray(body.lines) ? body.lines : [],
+        sha256: body.sha256 || "",
         tableName: "",
         stored: false
       });
@@ -278,7 +279,7 @@ saveButton.addEventListener("click", async () => {
 
       try {
         statusElement.textContent = `画像${receipt.fileNumber}をPostgreSQLへ保存中です。`;
-        const saved = await saveReceipt(receipt.lines);
+        const saved = await saveReceipt(receipt.lines, receipt.sha256);
         receipt.tableName = saved.tableName || "";
         receipt.stored = true;
       } catch (error) {

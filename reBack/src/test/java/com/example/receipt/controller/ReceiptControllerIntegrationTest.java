@@ -87,6 +87,35 @@ class ReceiptControllerIntegrationTest {
     }
 
     @Test
+    void analyzeReturnsAndStoresImageSha256() throws Exception {
+        mockMvc.perform(multipart("/api/receipts/analyze")
+                        .file(sampleFile())
+                        .param("geminiApiKey", "web-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sha256").value("9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a"));
+
+        String storedHash = jdbcTemplate.queryForObject(
+                "SELECT image_sha256 FROM receipt_image_hash_registry",
+                String.class
+        );
+        assertThat(storedHash).isEqualTo("9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a");
+    }
+
+    @Test
+    void analyzeRejectsAnImageHashThatWasAlreadyAnalyzed() throws Exception {
+        mockMvc.perform(multipart("/api/receipts/analyze")
+                        .file(sampleFile())
+                        .param("geminiApiKey", "web-key"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(multipart("/api/receipts/analyze")
+                        .file(sampleFile())
+                        .param("geminiApiKey", "web-key"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("DUPLICATE_RECEIPT_IMAGE"));
+    }
+
+    @Test
     void analyzeRequiresWebApiKey() throws Exception {
         MockMultipartFile file = sampleFile();
 

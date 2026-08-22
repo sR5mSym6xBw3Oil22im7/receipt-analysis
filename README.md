@@ -84,16 +84,16 @@ GeminiモデルはBackend設定ファイルで `gemini-3.5-flash-lite` に固定
 - 将来モデルを変更する場合はBackend設定/実装と互換性テストを更新する。
 
 ## 重複レシートの扱い
-`reFront/upload.html` の「解析」ボタンでは最大5枚を順番に解析し、抽出テキストを画面表示するだけでPostgreSQLへ保存しない。解析後に「PostgreSQLへ保存」ボタンを押したときだけ、各解析結果の重複チェックと保存を行う。
+`reFront/upload.html` の「解析」ボタンでは最大5枚を順番に解析し、抽出テキストと画像SHA-256を取得する。SHA-256はPostgreSQLへ重複チェックキーとして保存し、レシート本文は「PostgreSQLへ保存」ボタン押下時に保存する。
 
-保存時はまずBackendの重複チェックAPIで既存レシートデータとの完全一致を確認する。同じデータが登録済みならその画像だけを警告表示して保存せず、未登録データだけを保存する。保存API自身も409 `DUPLICATE_RECEIPT` で二重登録を防止するため、チェック直後に競合が起きても新しいテーブルは作成しない。たとえば5枚中2・3枚目が登録済みなら、2・3枚目は保存せず、1・4・5枚目だけを保存する。
+保存時は画像SHA-256をキーに重複確認する。同じ画像が登録済みならその画像だけを警告表示して保存せず、未登録画像だけを保存する。保存API自身も409 `DUPLICATE_RECEIPT_IMAGE` で二重登録を防止する。たとえば5枚中2・3枚目が重複なら、2・3枚目は保存せず、1・4・5枚目だけを保存する。
 
 ## 重要な実装仕様
 添付仕様に従い、レシート1枚ごとに新しいPostgreSQLテーブルを作る。テーブル名はBackendがUUIDから生成し、ユーザー入力やGemini出力をDDL識別子へ使用しない。
 
 
 ## 解析時保存防止
-- 「解析」は `POST /api/receipts/analyze` のみを使用し、PostgreSQLへのINSERT/CREATE TABLEを行わない。
+- 「解析」は `POST /api/receipts/analyze` で画像バイト列のSHA-256を計算し、`receipt_image_hash_registry` に重複チェックキーとして登録する。レシート本文のINSERT/CREATE TABLEは行わない。
 - 旧 `POST /api/receipts` の解析＋保存エンドポイントは廃止し、解析操作から保存処理へ到達するBackend経路を削除した。
-- PostgreSQLへの追加は「PostgreSQLへ保存」押下時の `POST /api/receipts/save` のみに限定する。
-- 保存時は `POST /api/receipts/check-duplicate` で各解析結果を確認し、重複分だけ除外して未登録分を保存する。
+- PostgreSQLへのレシート本文の追加は「PostgreSQLへ保存」押下時の `POST /api/receipts/save` のみに限定する。保存APIは解析レスポンスのSHA-256を受け取り、ハッシュ予約行へレシートテーブルを紐付ける。
+- 保存時は解析レスポンスのSHA-256を `POST /api/receipts/save` へ渡し、ハッシュをキーに重複分だけ除外して未登録分を保存する。

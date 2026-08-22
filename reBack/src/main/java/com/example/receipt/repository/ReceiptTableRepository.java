@@ -8,12 +8,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.dao.DuplicateKeyException;
 
 @Repository
 public class ReceiptTableRepository {
@@ -26,6 +28,33 @@ public class ReceiptTableRepository {
     public String createReceiptTableAndInsert(List<String> lines) {
         String tableName = ReceiptTableName.generate();
         return createReceiptTableAndInsert(tableName, lines);
+    }
+
+    public String createReceiptTableAndInsert(List<String> lines, String sha256) {
+        ensureImageHashRegistry();
+        String tableName = ReceiptTableName.generate();
+        int updated = jdbcTemplate.update(
+                "UPDATE receipt_image_hash_registry SET table_name = ? " +
+                        "WHERE image_sha256 = ? AND table_name IS NULL",
+                tableName,
+                sha256
+        );
+        if (updated == 0) {
+            throw new ReceiptException(HttpStatus.CONFLICT, "DUPLICATE_RECEIPT_IMAGE", "同じレシート画像は既に登録されています。");
+        }
+        return createReceiptTableAndInsert(tableName, lines);
+    }
+
+    public void reserveImageHash(String sha256) {
+        ensureImageHashRegistry();
+        try {
+            jdbcTemplate.update(
+                    "INSERT INTO receipt_image_hash_registry (image_sha256, table_name) VALUES (?, NULL)",
+                    sha256
+            );
+        } catch (DuplicateKeyException e) {
+            throw new ReceiptException(HttpStatus.CONFLICT, "DUPLICATE_RECEIPT_IMAGE", "同じレシート画像は既に解析または登録されています。");
+        }
     }
 
     public String createReceiptTableAndInsert(String tableName, List<String> lines) {
@@ -59,6 +88,17 @@ public class ReceiptTableRepository {
         return tableName;
     }
 
+    private void ensureImageHashRegistry() {
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS receipt_image_hash_registry (
+                    image_sha256 VARCHAR(64) PRIMARY KEY,
+                    table_name VARCHAR(64) UNIQUE,
+                    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """);
+        jdbcTemplate.execute("ALTER TABLE receipt_image_hash_registry ALTER COLUMN table_name DROP NOT NULL");
+    }
+
     public List<ReceiptSummary> findAllReceiptTables() {
         List<ReceiptSummary> summaries = new ArrayList<>();
         for (String tableName : findReceiptTableNames()) {
@@ -81,12 +121,15 @@ public class ReceiptTableRepository {
         return new ReceiptDetail(summary.tableName(), summary.lineCount(), summary.createdAt(), lines);
     }
 
+    @Transactional
     public void deleteReceipt(String tableName) {
         assertSafeTableName(tableName);
         if (!tableExists(tableName)) {
             throw new ReceiptException(HttpStatus.NOT_FOUND, "RECEIPT_NOT_FOUND", "指定されたレシートが見つかりません。");
         }
         jdbcTemplate.execute("DROP TABLE " + tableName);
+        ensureImageHashRegistry();
+        jdbcTemplate.update("DELETE FROM receipt_image_hash_registry WHERE table_name = ?", tableName);
     }
 
     private List<String> findReceiptTableNames() {

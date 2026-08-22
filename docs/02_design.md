@@ -26,12 +26,12 @@ Render Web Service (reBack / Spring Boot)
 3. 各画像について `file` と必須の `geminiApiKey` を `POST /api/receipts/analyze` へ送信する。
 4. Backendが空ファイル、MIME Type、5MB上限を検証する。
 5. Backendは受信した `geminiApiKey` だけを使ってGemini APIを呼び出し、構造化JSON `{ "lines": [...] }` を取得する。
-6. Backendが空行を除去し、最大1000行までに正規化してFrontendへ返す。この時点ではPostgreSQLへ保存しない。
+6. Backendが画像バイト列のSHA-256を計算し、`receipt_image_hash_registry`へ登録する。空行を除去し、最大1000行までに正規化して `lines` と `sha256` をFrontendへ返す。
 7. 最大5枚の解析完了後、Frontendは抽出テキストを「未保存」として表示し、「PostgreSQLへ保存」ボタンを有効化する。解析ボタン押下だけでは保存処理を行わない。
-8. 利用者が「PostgreSQLへ保存」を押すと、Frontendは未保存の各 `lines` を `POST /api/receipts/check-duplicate` へ順番に送信する。
-9. Backendは既存の全 `receipt_<uuid32>` テーブルの `text` を `line_no` 順に取得し、新しい `lines` と完全一致するレシートがあるか確認する。
-10. 重複する場合、Frontendはその画像を警告表示して `/save` を呼ばず、後続画像の処理を継続する。
-11. 重複しない場合、Frontendは `POST /api/receipts/save` へ `lines` を送信する。Backendは保存直前にも重複を再確認し、一致があれば409 `DUPLICATE_RECEIPT` を返して新規テーブルを作成しない。
+8. 利用者が「PostgreSQLへ保存」を押すと、Frontendは未保存の各 `lines` と `sha256` を `POST /api/receipts/save` へ順番に送信する。
+9. Backendは `receipt_image_hash_registry.image_sha256` を一意キーとして重複確認する。
+10. 重複する場合、Backendは409 `DUPLICATE_RECEIPT_IMAGE`を返し、Frontendはその画像を警告表示して後続画像の処理を継続する。
+11. 重複しない場合、Backendはハッシュ予約行へ新しいレシートテーブルを紐付け、抽出行を保存する。
 12. 保存可能な場合は `receipt_<32桁hex>` の新規テーブルをCREATEし、抽出行を `line_no` 順にINSERTする。
 13. 最大5枚すべての保存処理後、Frontendは重複で除外した画像番号と、新規登録した画像番号をまとめて表示する。例として5枚中2・3枚目が登録済みなら、2・3枚目は保存せず、1・4・5枚目はPostgreSQLへ保存する。
 14. Geminiが429/RESOURCE_EXHAUSTEDを返した場合は解析時点でその画像のDBテーブルを作成せず、Backendが429 `GEMINI_QUOTA_EXCEEDED` を返す。FrontendはAPIキー欄へフォーカスし、次のAPIキーへ入れ替えて再解析できるようにする。
@@ -67,8 +67,8 @@ Representative errors:
 ### POST `/api/receipts/analyze`
 Content-Type: `multipart/form-data`
 
-- `file` と `geminiApiKey` を受け取り、Gemini解析結果 `{ "lines": [...] }` だけを返す。
-- PostgreSQLへのCREATE/INSERTは行わない。
+- `file` と `geminiApiKey` を受け取り、画像SHA-256を `receipt_image_hash_registry` へ登録する。
+- Gemini解析結果 `{ "lines": [...], "sha256": "64桁hex" }` を返す。レシート本文テーブルのCREATE/INSERTは行わない。
 
 ### POST `/api/receipts/save`
 Content-Type: `application/json`
@@ -76,16 +76,20 @@ Content-Type: `application/json`
 Request:
 ```json
 {
-  "lines": ["SAMPLE STORE", "ITEM 100", "TOTAL 100"]
+  "lines": ["SAMPLE STORE", "ITEM 100", "TOTAL 100"],
+  "sha256": "64桁の小文字16進数"
 }
 ```
 
 - 未登録: 200で新規 `receipt_<uuid32>` テーブルを作成して保存する。
-- 登録済み: 409 `DUPLICATE_RECEIPT` を返し、新しいテーブルを作成しない。
+- 登録済み: 409 `DUPLICATE_RECEIPT_IMAGE` を返し、新しいテーブルを作成しない。
 - Frontendは409を処理停止条件にせず、その画像だけをスキップして次の選択画像へ進む。
 
 ### GET `/api/health`
 RenderのHealth Check用。
+
+### DELETE `/api/receipts/{tableName}`
+レシートテーブルを削除すると同時に、`receipt_image_hash_registry` の `table_name` が一致する画像SHA-256も削除する。テーブル削除とハッシュ削除は同一トランザクションで実行するため、削除後は同じ画像を再登録できる。
 
 ## 4. PostgreSQLテーブル
 レシート1枚ごとに次のDDLを実行する。
@@ -100,6 +104,16 @@ CREATE TABLE receipt_<uuid32> (
 ```
 
 テーブル名はBackend内部で生成し、正規表現 `receipt_[0-9a-f]{32}` に一致する場合だけDDLに使用する。抽出文字列はPreparedStatementでINSERTする。
+
+画像重複チェック用に次の管理テーブルを使用する。
+
+```sql
+CREATE TABLE receipt_image_hash_registry (
+    image_sha256 VARCHAR(64) PRIMARY KEY,
+    table_name VARCHAR(64) UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ## 5. Gemini連携
 - Java SDK: `com.google.genai:google-genai`
@@ -134,7 +148,7 @@ CREATE TABLE receipt_<uuid32> (
 
 
 ## 解析時保存防止
-- 「解析」は `POST /api/receipts/analyze` のみを使用し、PostgreSQLへのINSERT/CREATE TABLEを行わない。
+- 「解析」は `POST /api/receipts/analyze` で画像SHA-256を計算し、`receipt_image_hash_registry`へINSERTする。レシート本文のINSERT/CREATE TABLEは行わない。
 - 旧 `POST /api/receipts` の解析＋保存エンドポイントは廃止し、解析操作から保存処理へ到達するBackend経路を削除した。
 - PostgreSQLへの追加は「PostgreSQLへ保存」押下時の `POST /api/receipts/save` のみに限定する。
-- 保存時は `POST /api/receipts/check-duplicate` で各解析結果を確認し、重複分だけ除外して未登録分を保存する。
+- 保存時は解析レスポンスのSHA-256を `POST /api/receipts/save` へ渡し、SHA-256をキーに重複分だけ除外して未登録分を保存する。

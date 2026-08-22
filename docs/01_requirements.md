@@ -12,8 +12,9 @@
 - レシート画像解析にはGemini APIを使用し、採用モデルは `gemini-3.5-flash-lite` とすること。
 - 添付の `レシート.zip` を開発・確認用レシート画像として扱うこと。
 - コア機能を優先し、拡張機能は後回しとすること。
-- 「解析」ボタンではレシート画像から文字を抽出して画面表示するだけとし、PostgreSQLへ登録しないこと。
+- 「解析」ボタンではレシート画像から文字を抽出して画面表示し、画像バイト列のSHA-256をPostgreSQLへ重複チェックキーとして登録すること。レシート本文は登録しないこと。
 - 「PostgreSQLへ保存」ボタン押下時にだけ重複チェックを行い、同じレシートデータが未登録の場合だけPostgreSQLへ新しいテーブルを1個作成して抽出テキストを保存すること。登録済みの場合は警告表示し、新しいテーブルを作成しないこと。
+- レシートテーブル削除時は、紐付く画像SHA-256も `receipt_image_hash_registry` から削除し、同じ画像を再登録可能にすること。
 
 ## 3. チュートリアル画像から選定した技術
 今回のコア実装に必要な範囲だけを選定する。
@@ -34,9 +35,9 @@ Bootstrap、Tailwind CSS、SCSS、Figma等はコア機能に必須ではない�
 - 画像サイズ上限は5MBとする。添付ZIP内の最大ファイルは約1.73MBのため全画像が範囲内である。
 - 動的テーブル名はユーザー入力やGeminiの文字列を使用せず、BackendでUUIDから生成する。
 - Geminiの結果は `lines: string[]` のJSONとして受け取り、1行をDBの1レコードとして保存する。
-- `upload.html` の「解析」ボタン押下では各画像を `/api/receipts/analyze` へ送り、抽出テキストを画面表示するだけとする。解析時に保存APIや重複チェックAPIは呼び出さない。
-- 解析完了後に「PostgreSQLへ保存」ボタンを有効化し、その押下時に各解析結果を `POST /api/receipts/check-duplicate` へ送って重複確認する。
-- 重複していない解析結果だけ `POST /api/receipts/save` へ送り、PostgreSQLへ追加する。`POST /api/receipts/save` 自身も保存直前に重複を再確認し、完全一致するデータがあれば409 `DUPLICATE_RECEIPT` を返して新規テーブルを作成しない。
+- `upload.html` の「解析」ボタン押下では各画像を `/api/receipts/analyze` へ送り、抽出テキストとSHA-256を画面表示用に受け取る。BackendはSHA-256を `receipt_image_hash_registry` へ登録し、同一ハッシュは409で拒否する。
+- 解析完了後に「PostgreSQLへ保存」ボタンを有効化し、その押下時に各解析結果とSHA-256を保存APIへ送る。
+- 重複していない解析結果だけ `POST /api/receipts/save` へ送り、SHA-256の予約行へ新しいレシートテーブルを紐付ける。既存ハッシュの場合は409 `DUPLICATE_RECEIPT_IMAGE` を返して新規テーブルを作成しない。
 - 複数選択時に一部だけが登録済みでも処理全体を中止せず、その画像だけを警告表示して除外し、未登録の後続画像を継続して保存する。例: 5枚中2・3枚目が登録済みなら、2・3枚目は非登録、1・4・5枚目は登録する。
 - DBパスワード等の秘密情報はソースコードへ埋め込まない。
 - **Gemini APIキーは `reFront/upload.html` の入力欄で必須入力し、その入力値だけを使用する。**
@@ -59,7 +60,7 @@ Bootstrap、Tailwind CSS、SCSS、Figma等はコア機能に必須ではない�
 
 
 ## 解析時保存防止
-- 「解析」は `POST /api/receipts/analyze` のみを使用し、PostgreSQLへのINSERT/CREATE TABLEを行わない。
+- 「解析」は `POST /api/receipts/analyze` でSHA-256を計算して `receipt_image_hash_registry` へINSERTする。レシート本文のINSERT/CREATE TABLEは行わない。
 - 旧 `POST /api/receipts` の解析＋保存エンドポイントは廃止し、解析操作から保存処理へ到達するBackend経路を削除した。
 - PostgreSQLへの追加は「PostgreSQLへ保存」押下時の `POST /api/receipts/save` のみに限定する。
-- 保存時は `POST /api/receipts/check-duplicate` で各解析結果を確認し、重複分だけ除外して未登録分を保存する。
+- 保存時は解析レスポンスのSHA-256を `POST /api/receipts/save` へ渡し、ハッシュをキーに重複分を除外して未登録分を保存する。

@@ -49,7 +49,8 @@ test("analysis and PostgreSQL save are separate operations", () => {
 
 test("save button stores each analyzed receipt", () => {
   assert.match(js, /continue;/);
-  assert.match(js, /saveReceipt\(receipt\.lines\)/);
+  assert.match(js, /saveReceipt\(receipt\.lines, receipt\.sha256\)/);
+  assert.match(js, /body: JSON\.stringify\(\{ lines, sha256 \}\)/);
   assert.match(js, /if \(busy\) return;/);
   assert.match(js, /receipt\.stored = true/);
   assert.match(js, /SAVE_REQUEST_TIMEOUT_MS/);
