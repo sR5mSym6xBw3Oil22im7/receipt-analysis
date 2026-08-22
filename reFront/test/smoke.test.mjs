@@ -98,10 +98,13 @@ test("select page loads receipt list and detail bubble", () => {
   assert.match(select, /id="receipt-list"/);
   assert.match(select, /id="detail-bubble"/);
   assert.match(select, /id="close-detail"/);
-  assert.doesNotMatch(select, /id="delete-detail"/);
+  assert.match(select, /id="delete-selected"/);
+  assert.match(select, /id="delete-selected"[^>]*hidden/);
+  assert.match(selectJs, /checkbox/);
   assert.match(selectJs, /\/api\/receipts/);
   assert.match(selectJs, /detailBubble/);
   assert.match(selectJs, /method:\s*"DELETE"/);
-  assert.match(selectJs, /参照/);
-  assert.match(selectJs, /削除/);
+  assert.match(selectJs, /selectedTableNames/);
+  assert.match(selectJs, /receiptCount/);
+  assert.match(select, /チェックしたレシートを削除/);
 });
