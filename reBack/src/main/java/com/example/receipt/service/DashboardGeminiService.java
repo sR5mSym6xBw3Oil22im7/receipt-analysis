@@ -26,7 +26,7 @@ public class DashboardGeminiService {
     private final Gson gson = new Gson();
 
     public DashboardGeminiService(ReceiptAnalyticsRepository repository,
-            @Value("${gemini.model:gemini-3.5-flash-lite}") String model) {
+            @Value("${gemini.model:gemini-3.7-flash}") String model) {
         this.repository = repository;
         this.model = model;
     }
@@ -38,13 +38,14 @@ public class DashboardGeminiService {
         LocalDate today = LocalDate.now(ZoneId.of("Asia/Tokyo"));
         List<Map<String, Object>> source = repository.findSavedStructuredData();
         String prompt = """
-                以下はPostgreSQLに保存された構造化レシートデータです。このデータだけを使って支出分析をしてください。
+                以下はPostgreSQLに保存されたレシートデータです。このデータだけを使って支出分析をしてください。
+                rawLinesは保存されたレシート本文です。金額・購入日時・店舗名が構造化値と矛盾する場合はrawLinesを確認してください。
                 入力にない値を推測・補完・創作してはいけません。JSONのみ返してください。
                 今日の日付は %s、対象月は %s です。
                 currentMonthTotalは対象月のtotal_amount合計、currentMonthReceiptCountは対象月の購入日時の件数、
                 averagePerDayはcurrentMonthTotalを今日の日付の日数で割った整数です。
                 dailyTrendは対象月の1日から今日までを日付ごとに出し、購入日時がその日のtotal_amountだけを合計してください。
-                recentReceiptsは全期間の購入日時降順で5件、topItemsは対象月のitemsをitem_name完全一致で集計した金額上位5件です。
+                recentReceiptsは全期間の購入日時降順で5件、topItemsは対象月のitemsをitem_name完全一致で集計した金額上位5件です。各行のreceiptTableNameは入力データの値をそのまま返してください。
                 storeBreakdownは対象月のstore_categoryごとのtotal_amount合計、categoryBreakdownは対象月のitemsのcategoryごとのamount合計です。
                 保存済みデータが空の場合は数値0、配列空で返してください。
                 形式: {"period":"YYYY-MM","currentMonthTotal":0,"currentMonthReceiptCount":0,"averagePerDay":0,"totalReceiptCount":0,"dailyTrend":[{"date":"YYYY-MM-DD","amount":0}],"storeBreakdown":[{"label":"","amount":0,"percentage":0}],"categoryBreakdown":[{"label":"","amount":0,"percentage":0}],"recentReceipts":[{"receiptTableName":"","purchasedAt":"","storeName":"","storeCategory":"","totalAmount":0}],"topItems":[{"itemName":"","category":"","purchaseCount":0,"totalAmount":0]}
@@ -69,12 +70,13 @@ public class DashboardGeminiService {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("purchasedAt", receipt.get("purchased_at"));
             row.put("totalAmount", receipt.get("total_amount"));
+            row.put("rawLines", receipt.get("rawLines"));
             dailySource.add(row);
         }
         String prompt = """
-                PostgreSQLに保存された以下のレシートデータだけを使い、日別支出を計算してください。
+                PostgreSQLに保存された以下のレシートデータだけを使い、日別支出を計算してください。rawLinesは保存されたレシート本文です。
                 今日の日付は %s、対象月は %s です。入力にないデータを作らないでください。
-                purchasedAtが対象月の日付と一致するレシートだけを使い、同じ日付のtotalAmountを合計してください。
+                rawLinesとpurchasedAtから購入日を確認し、対象月の日付と一致するレシートだけを使ってください。同じ日付の最終支払額totalAmountを合計してください。
                 totalAmountがnullのレシートは除外してください。対象月の1日から今日まで全日付を1回ずつ返し、データがない日はamountを0にしてください。
                 dateはYYYY-MM-DD、amountは整数です。JSONのみ返してください。
                 形式: {"dailyTrend":[{"date":"YYYY-MM-DD","amount":0}]}

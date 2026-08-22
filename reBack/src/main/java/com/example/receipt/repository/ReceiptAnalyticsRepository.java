@@ -69,7 +69,10 @@ public class ReceiptAnalyticsRepository {
         String sql = "SELECT receipt_table_name,store_name,branch_name,store_category,purchased_at,total_amount,payment_method,receipt_number FROM " + SUMMARY + " ORDER BY created_at";
         for (Map<String, Object> summary : jdbc.queryForList(sql)) {
             Map<String, Object> receipt = new LinkedHashMap<>(summary);
-            receipt.put("items", jdbc.queryForList("SELECT item_name,category,quantity,unit_price,amount FROM receipt_structured_item WHERE receipt_table_name=? ORDER BY item_no", summary.get("receipt_table_name")));
+            String tableName = String.valueOf(summary.get("receipt_table_name"));
+            if (!ReceiptTableName.isSafe(tableName)) continue;
+            receipt.put("items", jdbc.queryForList("SELECT item_name,category,quantity,unit_price,amount FROM receipt_structured_item WHERE receipt_table_name=? ORDER BY item_no", tableName));
+            receipt.put("rawLines", jdbc.queryForList("SELECT text FROM " + tableName + " ORDER BY line_no", String.class));
             result.add(receipt);
         }
         return result;

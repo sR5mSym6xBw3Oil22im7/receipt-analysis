@@ -25,4 +25,4 @@ app:
   max-upload-bytes: 5242880
 
 gemini:
-  model: gemini-3.5-flash-lite
+  model: gemini-3.7-flash

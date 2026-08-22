@@ -45,7 +45,7 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
     private final Gson gson = new Gson();
 
     public GeminiReceiptAnalyzer(
-            @Value("${gemini.model:gemini-3.5-flash-lite}") String model) {
+            @Value("${gemini.model:gemini-3.7-flash}") String model) {
         this.model = model;
     }
 
