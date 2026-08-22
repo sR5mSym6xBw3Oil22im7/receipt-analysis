@@ -1,6 +1,7 @@
 package com.example.receipt.service;
 
 import com.example.receipt.dto.DashboardResponse;
+import com.example.receipt.dto.DashboardDailyTrend;
 import com.example.receipt.exception.ReceiptException;
 import com.example.receipt.repository.ReceiptAnalyticsRepository;
 import com.google.genai.Client;
@@ -15,6 +16,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 @Service
 public class DashboardGeminiService {
@@ -52,8 +55,41 @@ public class DashboardGeminiService {
             var response = client.models.generateContent(model, Content.fromParts(Part.fromText(prompt)), config);
             DashboardResponse result = gson.fromJson(response.text(), DashboardResponse.class);
             if (result == null) throw new ReceiptException(HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_DASHBOARD_RESULT", "Geminiの分析結果が不正です。");
-            return result;
+            List<DashboardDailyTrend> dailyTrend = analyzeDailyTrend(apiKey, source, today);
+            return new DashboardResponse(result.period(), result.currentMonthTotal(), result.currentMonthReceiptCount(),
+                    result.averagePerDay(), result.totalReceiptCount(), dailyTrend, result.storeBreakdown(),
+                    result.categoryBreakdown(), result.recentReceipts(), result.topItems());
         } catch (ReceiptException e) { throw e; }
         catch (Exception e) { throw new ReceiptException(HttpStatus.BAD_GATEWAY, "GEMINI_DASHBOARD_ERROR", "Geminiによる支出分析に失敗しました。"); }
     }
+
+    private List<DashboardDailyTrend> analyzeDailyTrend(String apiKey, List<Map<String, Object>> source, LocalDate today) {
+        List<Map<String, Object>> dailySource = new ArrayList<>();
+        for (Map<String, Object> receipt : source) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("purchasedAt", receipt.get("purchased_at"));
+            row.put("totalAmount", receipt.get("total_amount"));
+            dailySource.add(row);
+        }
+        String prompt = """
+                PostgreSQLに保存された以下のレシートデータだけを使い、日別支出を計算してください。
+                今日の日付は %s、対象月は %s です。入力にないデータを作らないでください。
+                purchasedAtが対象月の日付と一致するレシートだけを使い、同じ日付のtotalAmountを合計してください。
+                totalAmountがnullのレシートは除外してください。対象月の1日から今日まで全日付を1回ずつ返し、データがない日はamountを0にしてください。
+                dateはYYYY-MM-DD、amountは整数です。JSONのみ返してください。
+                形式: {"dailyTrend":[{"date":"YYYY-MM-DD","amount":0}]}
+                入力データ:
+                """.formatted(today, today.toString().substring(0, 7)) + gson.toJson(dailySource);
+        try (Client client = Client.builder().apiKey(apiKey).build()) {
+            var config = GenerateContentConfig.builder().responseMimeType("application/json").candidateCount(1).build();
+            var response = client.models.generateContent(model, Content.fromParts(Part.fromText(prompt)), config);
+            DailyTrendResult result = gson.fromJson(response.text(), DailyTrendResult.class);
+            if (result == null || result.dailyTrend() == null) throw new IllegalStateException("daily trend is missing");
+            return result.dailyTrend();
+        } catch (Exception e) {
+            throw new ReceiptException(HttpStatus.BAD_GATEWAY, "GEMINI_DAILY_TREND_ERROR", "Geminiによる日別支出分析に失敗しました。");
+        }
+    }
+
+    private record DailyTrendResult(List<DashboardDailyTrend> dailyTrend) { }
 }
