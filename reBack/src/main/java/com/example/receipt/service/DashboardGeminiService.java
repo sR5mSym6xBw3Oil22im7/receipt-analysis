@@ -27,7 +27,7 @@ public class DashboardGeminiService {
     private final Gson gson = new Gson();
 
     public DashboardGeminiService(ReceiptAnalyticsRepository repository,
-            @Value("${gemini.dashboard-model:gemini-3.7-flash}") String model) {
+            @Value("${gemini.dashboard-model:gemini-3.5-flash-lite}") String model) {
         this.repository = repository;
         this.model = model;
     }
@@ -63,7 +63,11 @@ public class DashboardGeminiService {
                     result.categoryBreakdown(), result.recentReceipts(), result.topItems());
         } catch (ReceiptException e) { throw e; }
         catch (ApiException e) { throw GeminiReceiptAnalyzer.mapApiException(e); }
-        catch (Exception e) { throw new ReceiptException(HttpStatus.BAD_GATEWAY, "GEMINI_DASHBOARD_ERROR", "Geminiによる支出分析に失敗しました。"); }
+        catch (Exception e) {
+            ReceiptException classified = GeminiReceiptAnalyzer.classifyUnexpectedGeminiFailure(e);
+            if (classified != null) throw classified;
+            throw new ReceiptException(HttpStatus.BAD_GATEWAY, "GEMINI_DASHBOARD_ERROR", "Geminiによる支出分析に失敗しました。");
+        }
     }
 
     private List<DashboardDailyTrend> analyzeDailyTrend(String apiKey, List<Map<String, Object>> source, LocalDate today) {
@@ -93,6 +97,8 @@ public class DashboardGeminiService {
         } catch (ApiException e) {
             throw GeminiReceiptAnalyzer.mapApiException(e);
         } catch (Exception e) {
+            ReceiptException classified = GeminiReceiptAnalyzer.classifyUnexpectedGeminiFailure(e);
+            if (classified != null) throw classified;
             throw new ReceiptException(HttpStatus.BAD_GATEWAY, "GEMINI_DAILY_TREND_ERROR", "Geminiによる日別支出分析に失敗しました。");
         }
     }

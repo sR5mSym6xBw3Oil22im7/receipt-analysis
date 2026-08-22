@@ -165,7 +165,7 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
      * exception instead of ApiException.  Preserve the actionable response
      * for quota and authentication failures in that case as well.
      */
-    private ReceiptException classifyUnexpectedGeminiFailure(Exception e) {
+    static ReceiptException classifyUnexpectedGeminiFailure(Exception e) {
         String message = e.getMessage() == null ? "" : e.getMessage();
         String normalized = message.toLowerCase(java.util.Locale.ROOT);
         if (normalized.contains("429") || normalized.contains("resource_exhausted")

@@ -8,4 +8,5 @@ app:
   frontend-origin: http://localhost:5051
   max-upload-bytes: 5242880
 gemini:
-  model: gemini-3.5-flash-lite
+  receipt-model: gemini-3.5-flash-lite
+  dashboard-model: gemini-3.5-flash-lite

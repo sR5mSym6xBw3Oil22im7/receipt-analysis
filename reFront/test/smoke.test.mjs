@@ -9,17 +9,17 @@ const js = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const selectJs = await readFile(new URL("../select.js", import.meta.url), "utf8");
 const config = await readFile(new URL("../config.js", import.meta.url), "utf8");
 
-test("frontend accepts JPEG and PNG", () => {
-  assert.match(html, /accept="image\/jpeg,image\/png"/);
-  assert.equal((html.match(/name="file"/g) ?? []).length, 5);
-  assert.equal((html.match(/ファイルを選択/g) ?? []).length, 5);
+test("frontend accepts JPEG, PNG, and ZIP", () => {
+  assert.match(html, /accept="image\/jpeg,image\/png,\.zip,application\/zip"/);
+  assert.equal((html.match(/name="file"/g) ?? []).length, 1);
+  assert.equal((html.match(/ファイルを選択/g) ?? []).length, 1);
   assert.match(html, /selected-file-name/);
   assert.match(html + js, /error-message/);
 });
 
 
-test("upload page cache-busts app.js so old auto-save code is not reused", () => {
-  assert.match(html, /<script src="\.\/app\.js\?v=20260822-1"><\/script>/);
+test("upload page cache-busts app.js so old upload code is not reused", () => {
+  assert.match(html, /<script src="\.\/app\.js\?v=20260822-zip"><\/script>/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {
@@ -49,8 +49,8 @@ test("analysis and PostgreSQL save are separate operations", () => {
 
 test("save button stores each analyzed receipt", () => {
   assert.match(js, /continue;/);
-  assert.match(js, /saveReceipt\(receipt\.lines, receipt\.sha256\)/);
-  assert.match(js, /body: JSON\.stringify\(\{ lines, sha256 \}\)/);
+  assert.match(js, /saveReceipt\(receipt\.lines, receipt\.sha256, receipt\.structuredData\)/);
+  assert.match(js, /body: JSON\.stringify\(\{ lines, sha256, structuredData \}\)/);
   assert.match(js, /if \(busy\) return;/);
   assert.match(js, /receipt\.stored = true/);
   assert.match(js, /SAVE_REQUEST_TIMEOUT_MS/);
