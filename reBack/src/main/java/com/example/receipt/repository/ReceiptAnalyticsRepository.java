@@ -53,8 +53,12 @@ public class ReceiptAnalyticsRepository {
         Long total = jdbc.queryForObject("SELECT COALESCE(SUM(total_amount),0) FROM " + SUMMARY + " WHERE purchased_at >= ? AND purchased_at < ?", Long.class, start, end);
         Long count = jdbc.queryForObject("SELECT COUNT(*) FROM " + SUMMARY + " WHERE purchased_at >= ? AND purchased_at < ?", Long.class, start, end);
         Long all = jdbc.queryForObject("SELECT COUNT(*) FROM receipt_image_hash_registry WHERE table_name IS NOT NULL", Long.class);
-        List<DashboardMonthlyTrend> trend = new ArrayList<>();
-        for (int i = 5; i >= 0; i--) { YearMonth month = current.minusMonths(i); Long amount = jdbc.queryForObject("SELECT COALESCE(SUM(total_amount),0) FROM " + SUMMARY + " WHERE purchased_at >= ? AND purchased_at < ?", Long.class, month.atDay(1).atStartOfDay(), month.plusMonths(1).atDay(1).atStartOfDay()); trend.add(new DashboardMonthlyTrend(month.toString(), amount == null ? 0 : amount)); }
+        List<DashboardDailyTrend> trend = new ArrayList<>();
+        for (int day = 1; day <= today.getDayOfMonth(); day++) {
+            LocalDate date = current.atDay(day);
+            Long amount = jdbc.queryForObject("SELECT COALESCE(SUM(total_amount),0) FROM " + SUMMARY + " WHERE purchased_at >= ? AND purchased_at < ?", Long.class, date.atStartOfDay(), date.plusDays(1).atStartOfDay());
+            trend.add(new DashboardDailyTrend(date.toString(), amount == null ? 0 : amount));
+        }
         return new DashboardResponse(current.toString(), total == null ? 0 : total, count == null ? 0 : count, (total == null ? 0 : total) / today.getDayOfMonth(), all == null ? 0 : all,
                 trend, breakdown("store_category", start, end), categoryBreakdown(start, end), recent(), topItems(start, end));
     }
