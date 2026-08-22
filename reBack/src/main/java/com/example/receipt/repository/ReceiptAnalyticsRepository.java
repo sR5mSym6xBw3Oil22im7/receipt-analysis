@@ -62,11 +62,23 @@ public class ReceiptAnalyticsRepository {
         return new DashboardResponse(current.toString(), total == null ? 0 : total, count == null ? 0 : count, (total == null ? 0 : total) / today.getDayOfMonth(), all == null ? 0 : all,
                 trend, breakdown("store_category", start, end), categoryBreakdown(start, end), recent(), topItems(start, end));
     }
+
+    public List<Map<String, Object>> findSavedStructuredData() {
+        ensureTables();
+        List<Map<String, Object>> result = new ArrayList<>();
+        String sql = "SELECT receipt_table_name,store_name,branch_name,store_category,purchased_at,total_amount,payment_method,receipt_number FROM " + SUMMARY + " ORDER BY created_at";
+        for (Map<String, Object> summary : jdbc.queryForList(sql)) {
+            Map<String, Object> receipt = new LinkedHashMap<>(summary);
+            receipt.put("items", jdbc.queryForList("SELECT item_name,category,quantity,unit_price,amount FROM receipt_structured_item WHERE receipt_table_name=? ORDER BY item_no", summary.get("receipt_table_name")));
+            result.add(receipt);
+        }
+        return result;
+    }
     private List<DashboardBreakdown> breakdown(String column, LocalDateTime start, LocalDateTime end) {
         List<Map<String,Object>> rows = jdbc.queryForList("SELECT COALESCE(" + column + ",'その他') label, COALESCE(SUM(total_amount),0) amount FROM " + SUMMARY + " WHERE purchased_at >= ? AND purchased_at < ? AND total_amount IS NOT NULL GROUP BY " + column + " ORDER BY amount DESC", start, end);
         long sum = rows.stream().mapToLong(r -> ((Number)r.get("amount")).longValue()).sum(); return rows.stream().map(r -> new DashboardBreakdown(String.valueOf(r.get("label")), ((Number)r.get("amount")).longValue(), sum == 0 ? 0 : ((Number)r.get("amount")).doubleValue() * 100 / sum)).toList();
     }
     private List<DashboardBreakdown> categoryBreakdown(LocalDateTime start, LocalDateTime end) { String sql = "SELECT COALESCE(i.category,'その他') label, COALESCE(SUM(i.amount),0) amount FROM receipt_structured_item i JOIN " + SUMMARY + " s ON s.receipt_table_name=i.receipt_table_name WHERE s.purchased_at >= ? AND s.purchased_at < ? GROUP BY i.category ORDER BY amount DESC"; List<Map<String,Object>> rows=jdbc.queryForList(sql,start,end); long sum=rows.stream().mapToLong(r->((Number)r.get("amount")).longValue()).sum(); return rows.stream().map(r->new DashboardBreakdown(String.valueOf(r.get("label")),((Number)r.get("amount")).longValue(),sum==0?0:((Number)r.get("amount")).doubleValue()*100/sum)).toList(); }
-    private List<DashboardRecentReceipt> recent() { return jdbc.query("SELECT receipt_table_name,purchased_at,store_name,store_category,total_amount FROM " + SUMMARY + " WHERE purchased_at IS NOT NULL ORDER BY purchased_at DESC LIMIT 5", (rs,n)-> { Number amount = (Number) rs.getObject(5); return new DashboardRecentReceipt(rs.getString(1), rs.getObject(2, LocalDateTime.class), rs.getString(3), rs.getString(4), amount == null ? null : amount.longValue()); }); }
+    private List<DashboardRecentReceipt> recent() { return jdbc.query("SELECT receipt_table_name,purchased_at,store_name,store_category,total_amount FROM " + SUMMARY + " WHERE purchased_at IS NOT NULL ORDER BY purchased_at DESC LIMIT 5", (rs,n)-> { Number amount = (Number) rs.getObject(5); return new DashboardRecentReceipt(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), amount == null ? null : amount.longValue()); }); }
     private List<DashboardTopItem> topItems(LocalDateTime start, LocalDateTime end) { return jdbc.query("SELECT i.item_name,i.category,COUNT(*) purchase_count,COALESCE(SUM(i.amount),0) total_amount FROM receipt_structured_item i JOIN " + SUMMARY + " s ON s.receipt_table_name=i.receipt_table_name WHERE s.purchased_at >= ? AND s.purchased_at < ? GROUP BY i.item_name,i.category ORDER BY total_amount DESC LIMIT 5", (rs,n)->new DashboardTopItem(rs.getString(1),rs.getString(2),rs.getLong(3),rs.getLong(4)),start,end); }
 }

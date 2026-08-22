@@ -1,16 +1,18 @@
 package com.example.receipt.controller;
 
 import com.example.receipt.dto.DashboardResponse;
-import com.example.receipt.repository.ReceiptAnalyticsRepository;
-import org.springframework.web.bind.annotation.GetMapping;
+import com.example.receipt.dto.DashboardAnalyzeRequest;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController {
-    private final ReceiptAnalyticsRepository repository;
-    public DashboardController(ReceiptAnalyticsRepository repository) { this.repository = repository; }
-    @GetMapping
-    public DashboardResponse dashboard() { return repository.dashboard(); }
+    private final com.example.receipt.service.DashboardGeminiService service;
+    public DashboardController(com.example.receipt.service.DashboardGeminiService service) { this.service = service; }
+
+    @PostMapping("/analyze")
+    public DashboardResponse analyze(@RequestBody DashboardAnalyzeRequest request) { return service.analyze(request.geminiApiKey()); }
 }
