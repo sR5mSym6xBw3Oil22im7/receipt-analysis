@@ -30,7 +30,7 @@ export DB_PORT=5432
 export DB_NAME=receipt_db
 export DB_USER=postgres
 export DB_PASSWORD='your_password'
-export APP_FRONTEND_ORIGIN='http://localhost:5500'
+export APP_FRONTEND_ORIGIN='http://localhost:5051'
 ```
 
 Gemini APIキーの環境変数は設定しない。
@@ -43,12 +43,12 @@ mvn spring-boot:run
 
 Health Check:
 ```bash
-curl http://localhost:8080/api/health
+curl http://localhost:8081/api/health
 ```
 
 API確認では `geminiApiKey` が必須:
 ```bash
-curl -X POST http://localhost:8080/api/receipts \
+curl -X POST http://localhost:8081/api/receipts \
   -F 'file=@/path/to/receipt.jpg' \
   -F 'geminiApiKey=YOUR_GEMINI_API_KEY'
 ```
@@ -57,10 +57,10 @@ curl -X POST http://localhost:8080/api/receipts \
 別ターミナルで:
 ```bash
 cd reFront
-python3 -m http.server 5500
+python3 -m http.server 5051
 ```
 
-ブラウザで `http://localhost:5500` を開き、Gemini APIキーとレシート画像を入力する。
+ブラウザで `http://localhost:5051` を開き、Gemini APIキーとレシート画像を入力する。
 
 ## GitHub Pages
 `reFront` の内容をGitHub Pagesへ公開する。公開前に `reFront/config.js` の `YOUR-RENDER-SERVICE` を実際のRender Backendホスト名へ変更する。

@@ -1,4 +1,4 @@
-const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8080";
+const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
 const listStatus = document.getElementById("list-status");
 const receiptList = document.getElementById("receipt-list");
 const detailPanel = document.getElementById("detail-panel");

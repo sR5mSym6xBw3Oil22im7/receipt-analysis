@@ -137,7 +137,7 @@ CREATE TABLE receipt_image_hash_registry (
 - 入力したキーは現在の入力欄に保持して連続作業に使えるが、アプリ側ではlocalStorage/sessionStorage等へ永続化しない。
 
 ## 7. CORS
-`APP_FRONTEND_ORIGIN` にGitHub PagesのOriginを1個設定する。ローカル標準値は `http://localhost:5500`。
+`APP_FRONTEND_ORIGIN` にGitHub PagesのOriginを1個設定する。ローカル標準値は `http://localhost:5051`。
 
 ## 8. Render配置
 - `reFront`: GitHub Pages

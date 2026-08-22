@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8081}
   servlet:
     encoding:
       charset: UTF-8
@@ -21,7 +21,7 @@ spring:
       query-timeout: 20s
 
 app:
-  frontend-origin: ${APP_FRONTEND_ORIGIN:http://localhost:5500}
+  frontend-origin: ${APP_FRONTEND_ORIGIN:http://localhost:5051}
   max-upload-bytes: 5242880
 
 gemini:
