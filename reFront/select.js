@@ -1,4 +1,5 @@
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
+const backLink = document.getElementById("back-link");
 const listStatus = document.getElementById("list-status");
 const receiptList = document.getElementById("receipt-list");
 const detailPanel = document.getElementById("detail-panel");
@@ -8,6 +9,15 @@ const closeDetail = document.getElementById("close-detail");
 const deleteSelectedButton = document.getElementById("delete-selected");
 const selectedTableNames = new Set();
 let receiptCount = 0;
+
+function configureBackLink() {
+  const from = new URLSearchParams(window.location.search).get("from");
+  const referrerPath = document.referrer ? new URL(document.referrer).pathname.split("/").pop() : "";
+  const target = from === "dashboard" || (!from && referrerPath === "dashboard.html")
+    ? "./dashboard.html"
+    : "./index.html";
+  backLink.href = target;
+}
 
 function updateDeleteSelectedButton() {
   deleteSelectedButton.classList.toggle("hidden", receiptCount === 0);
@@ -124,4 +134,5 @@ async function loadReceipts() {
 closeDetail.addEventListener("click", () => detailPanel.classList.add("hidden"));
 deleteSelectedButton.addEventListener("click", deleteSelectedReceipts);
 updateDeleteSelectedButton();
+configureBackLink();
 loadReceipts();

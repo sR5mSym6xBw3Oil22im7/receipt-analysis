@@ -1,6 +1,7 @@
 package com.example.receipt.service;
 
 import com.example.receipt.dto.ReceiptText;
+import com.example.receipt.dto.ReceiptStructuredData;
 import com.example.receipt.dto.ReceiptUploadResponse;
 import com.example.receipt.exception.ReceiptException;
 import com.example.receipt.repository.ReceiptTableRepository;
@@ -38,11 +39,11 @@ public class ReceiptService {
                 geminiApiKey
         );
         repository.reserveImageHash(sha256);
-        return new ReceiptText(analyzed.lines(), sha256);
+        return new ReceiptText(analyzed.lines(), sha256, analyzed.structuredData());
     }
 
     @Transactional
-    public ReceiptUploadResponse store(java.util.List<String> lines, String sha256) {
+    public ReceiptUploadResponse store(java.util.List<String> lines, String sha256, ReceiptStructuredData structuredData) {
         java.util.List<String> originalLines = lines == null
                 ? java.util.List.of()
                 : lines.stream().filter(java.util.Objects::nonNull).toList();
@@ -51,6 +52,7 @@ public class ReceiptService {
         }
         String normalizedSha256 = normalizeSha256(sha256);
         String tableName = repository.createReceiptTableAndInsert(originalLines, normalizedSha256);
+        repository.saveStructuredData(tableName, normalizedSha256, structuredData);
         return new ReceiptUploadResponse(tableName, originalLines.size(), originalLines, normalizedSha256);
     }
 

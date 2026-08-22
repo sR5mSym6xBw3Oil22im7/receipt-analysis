@@ -59,6 +59,6 @@ public class ReceiptController {
     @PostMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ReceiptUploadResponse> save(
             @RequestBody ReceiptSaveRequest request) {
-        return ResponseEntity.ok(receiptService.store(request.lines(), request.sha256()));
+        return ResponseEntity.ok(receiptService.store(request.lines(), request.sha256(), request.structuredData()));
     }
 }

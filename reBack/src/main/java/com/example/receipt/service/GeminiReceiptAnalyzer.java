@@ -1,6 +1,8 @@
 package com.example.receipt.service;
 
 import com.example.receipt.dto.ReceiptText;
+import com.example.receipt.dto.ReceiptItemData;
+import com.example.receipt.dto.ReceiptStructuredData;
 import com.example.receipt.exception.ReceiptException;
 import com.google.genai.Client;
 import com.google.genai.errors.ApiException;
@@ -21,13 +23,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(GeminiReceiptAnalyzer.class);
     private static final String PROMPT = """
             この画像はレシートです。印字されている文字列を上から下へ読み取り、
-            1行ごとに lines 配列へ格納してください。
+            1行ごとに lines 配列へ格納し、同じ解析結果から structuredData も作成してください。
+            structuredData の店舗カテゴリは スーパー、コンビニ、ドラッグストア、飲食店、その他のいずれか、
+            商品カテゴリは 食料品、日用品、飲食、交通・移動、その他のいずれかにしてください。
+            読み取れない値は null とし、印字されていない値を作らないでください。
+            商品には購入した商品・サービスだけを含め、税・小計・合計・預り金・釣銭を含めないでください。
             推測で存在しない文字を追加しないでください。
             バーコード画像そのものは文字列化しなくて構いません。
             出力は指定されたJSONスキーマだけにしてください。
@@ -64,6 +72,24 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
                             .items(Schema.builder().type(Type.Known.STRING).build())
                             .build()
             );
+            Schema item = Schema.builder().type(Type.Known.OBJECT).properties(new LinkedHashMap<>(Map.of(
+                    "name", Schema.builder().type(Type.Known.STRING).build(),
+                    "category", Schema.builder().type(Type.Known.STRING).build(),
+                    "quantity", Schema.builder().type(Type.Known.NUMBER).build(),
+                    "unitPrice", Schema.builder().type(Type.Known.INTEGER).build(),
+                    "amount", Schema.builder().type(Type.Known.INTEGER).build()
+            ))).build();
+            properties.put("structuredData", Schema.builder().type(Type.Known.OBJECT)
+                    .properties(new LinkedHashMap<>(Map.of(
+                            "storeName", Schema.builder().type(Type.Known.STRING).build(),
+                            "branchName", Schema.builder().type(Type.Known.STRING).build(),
+                            "storeCategory", Schema.builder().type(Type.Known.STRING).build(),
+                            "purchasedAt", Schema.builder().type(Type.Known.STRING).build(),
+                            "totalAmount", Schema.builder().type(Type.Known.INTEGER).build(),
+                            "paymentMethod", Schema.builder().type(Type.Known.STRING).build(),
+                            "receiptNumber", Schema.builder().type(Type.Known.STRING).build(),
+                            "items", Schema.builder().type(Type.Known.ARRAY).items(item).build()
+                    ))).build());
 
             Schema responseSchema = Schema.builder()
                     .type(Type.Known.OBJECT)
@@ -116,7 +142,7 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
                 );
             }
 
-            return new ReceiptText(normalizedLines);
+            return new ReceiptText(normalizedLines, null, toStructuredData(parsed.structuredData()));
         } catch (ReceiptException e) {
             throw e;
         } catch (ApiException e) {
@@ -167,6 +193,22 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
         );
     }
 
-    private record GeminiResponse(List<String> lines) {
+    private ReceiptStructuredData toStructuredData(RawStructuredData raw) {
+        if (raw == null) return null;
+        LocalDateTime purchasedAt = null;
+        if (raw.purchasedAt() != null && !raw.purchasedAt().isBlank()) {
+            try { purchasedAt = LocalDateTime.parse(raw.purchasedAt()); } catch (RuntimeException ignored) { }
+        }
+        List<ReceiptItemData> items = raw.items() == null ? List.of() : raw.items().stream()
+                .filter(Objects::nonNull)
+                .map(item -> new ReceiptItemData(item.name(), item.category(), item.quantity(), item.unitPrice(), item.amount()))
+                .toList();
+        return new ReceiptStructuredData(raw.storeName(), raw.branchName(), raw.storeCategory(), purchasedAt,
+                raw.totalAmount(), raw.paymentMethod(), raw.receiptNumber(), items);
     }
+
+    private record GeminiResponse(List<String> lines, RawStructuredData structuredData) { }
+    private record RawStructuredData(String storeName, String branchName, String storeCategory, String purchasedAt,
+                                     Long totalAmount, String paymentMethod, String receiptNumber, List<RawItem> items) { }
+    private record RawItem(String name, String category, BigDecimal quantity, Long unitPrice, Long amount) { }
 }
