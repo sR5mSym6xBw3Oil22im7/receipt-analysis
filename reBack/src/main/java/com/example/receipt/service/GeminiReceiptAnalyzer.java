@@ -45,7 +45,7 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
     private final Gson gson = new Gson();
 
     public GeminiReceiptAnalyzer(
-            @Value("${gemini.model:gemini-3.7-flash}") String model) {
+            @Value("${gemini.receipt-model:gemini-3.5-flash-lite}") String model) {
         this.model = model;
     }
 
@@ -150,12 +150,42 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
         } catch (Exception e) {
             LOGGER.error("Gemini receipt analysis failed: model={}, mimeType={}, imageBytes={}, exception={}, message={}",
                     model, mimeType, imageBytes.length, e.getClass().getName(), e.getMessage());
+            ReceiptException classified = classifyUnexpectedGeminiFailure(e);
+            if (classified != null) throw classified;
             throw new ReceiptException(
                     HttpStatus.BAD_GATEWAY,
                     "GEMINI_API_ERROR",
                     "Gemini APIでレシート解析に失敗しました。"
             );
         }
+    }
+
+    /**
+     * SDK versions can surface transport/proxy failures as a plain runtime
+     * exception instead of ApiException.  Preserve the actionable response
+     * for quota and authentication failures in that case as well.
+     */
+    private ReceiptException classifyUnexpectedGeminiFailure(Exception e) {
+        String message = e.getMessage() == null ? "" : e.getMessage();
+        String normalized = message.toLowerCase(java.util.Locale.ROOT);
+        if (normalized.contains("429") || normalized.contains("resource_exhausted")
+                || normalized.contains("resource exhausted") || normalized.contains("quota")) {
+            return new ReceiptException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "GEMINI_QUOTA_EXCEEDED",
+                    "Gemini APIの利用上限に達しました。別の利用可能なAPIキーを入力して再試行してください。"
+            );
+        }
+        if (normalized.contains("401") || normalized.contains("403")
+                || normalized.contains("api key") || normalized.contains("apikey")
+                || normalized.contains("permission denied") || normalized.contains("unauthorized")) {
+            return new ReceiptException(
+                    HttpStatus.UNAUTHORIZED,
+                    "GEMINI_API_KEY_REJECTED",
+                    "Gemini APIキーが無効、ブロック済み、または権限不足です。別のAPIキーを入力してください。"
+            );
+        }
+        return null;
     }
 
     static ReceiptException mapApiException(ApiException e) {

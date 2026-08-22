@@ -5,6 +5,7 @@ import com.example.receipt.dto.DashboardDailyTrend;
 import com.example.receipt.exception.ReceiptException;
 import com.example.receipt.repository.ReceiptAnalyticsRepository;
 import com.google.genai.Client;
+import com.google.genai.errors.ApiException;
 import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.Part;
@@ -26,7 +27,7 @@ public class DashboardGeminiService {
     private final Gson gson = new Gson();
 
     public DashboardGeminiService(ReceiptAnalyticsRepository repository,
-            @Value("${gemini.model:gemini-3.7-flash}") String model) {
+            @Value("${gemini.dashboard-model:gemini-3.7-flash}") String model) {
         this.repository = repository;
         this.model = model;
     }
@@ -61,6 +62,7 @@ public class DashboardGeminiService {
                     result.averagePerDay(), result.totalReceiptCount(), dailyTrend, result.storeBreakdown(),
                     result.categoryBreakdown(), result.recentReceipts(), result.topItems());
         } catch (ReceiptException e) { throw e; }
+        catch (ApiException e) { throw GeminiReceiptAnalyzer.mapApiException(e); }
         catch (Exception e) { throw new ReceiptException(HttpStatus.BAD_GATEWAY, "GEMINI_DASHBOARD_ERROR", "Geminiによる支出分析に失敗しました。"); }
     }
 
@@ -88,6 +90,8 @@ public class DashboardGeminiService {
             DailyTrendResult result = gson.fromJson(response.text(), DailyTrendResult.class);
             if (result == null || result.dailyTrend() == null) throw new IllegalStateException("daily trend is missing");
             return result.dailyTrend();
+        } catch (ApiException e) {
+            throw GeminiReceiptAnalyzer.mapApiException(e);
         } catch (Exception e) {
             throw new ReceiptException(HttpStatus.BAD_GATEWAY, "GEMINI_DAILY_TREND_ERROR", "Geminiによる日別支出分析に失敗しました。");
         }

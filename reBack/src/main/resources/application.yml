@@ -25,4 +25,5 @@ app:
   max-upload-bytes: 5242880
 
 gemini:
-  model: gemini-3.7-flash
+  receipt-model: gemini-3.5-flash-lite
+  dashboard-model: gemini-3.7-flash
