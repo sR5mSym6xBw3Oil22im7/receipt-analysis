@@ -19,7 +19,7 @@ test("frontend accepts JPEG and PNG", () => {
 
 
 test("upload page cache-busts app.js so old auto-save code is not reused", () => {
-  assert.match(html, /<script src="\.\/app\.js\?v=20260821-11"><\/script>/);
+  assert.match(html, /<script src="\.\/app\.js\?v=20260822-1"><\/script>/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {

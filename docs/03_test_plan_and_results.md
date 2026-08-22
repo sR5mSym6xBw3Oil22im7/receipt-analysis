@@ -22,7 +22,7 @@ Gemini APIキーを成果物へ埋め込まず、通常の自動テストではG
 | BE-13 | APIキー | multipartの `geminiApiKey` が必須でAnalyzerへ渡る |
 | BE-14 | Integration | `/api/receipts/analyze` ではレシートテーブルを作成しない |
 | BE-17 | Integration | `/api/receipts/analyze` が画像SHA-256を返し、`receipt_image_hash_registry`へ保存する |
-| BE-18 | Integration | 同じ画像SHA-256の再解析を409 `DUPLICATE_RECEIPT_IMAGE`で拒否する |
+| BE-18 | Integration | 未保存の同じ画像SHA-256は再解析を許可し、保存済みの同じ画像だけ409 `DUPLICATE_RECEIPT_IMAGE`で拒否する |
 | BE-19 | Repository | レシートテーブル削除時に紐付く画像SHA-256も削除され、同じ画像を再登録できる |
 | BE-15 | Integration | `/api/receipts/save` で同一SHA-256の2回目保存は409 `DUPLICATE_RECEIPT_IMAGE` となり、テーブル数が増えない |
 | BE-16 | Integration/Repository | `receipt_` で始まる管理テーブルが存在しても、実レシートテーブルだけを対象に重複確認して応答する |
@@ -55,7 +55,7 @@ Gemini APIキーを成果物へ埋め込まず、通常の自動テストではG
 
 - Backend Maven test: PASS (`mvn -q test`)
 - Frontend Node test: PASS (1/1)
-- SHA-256画像重複テスト: PASS（解析レスポンス返却、管理テーブル登録、同一画像の409拒否）
+- SHA-256画像重複テスト: PASS（未保存画像の再解析許可、保存済み画像の409拒否）
 - Backend Java core smoke: PASS (Web入力APIキー必須/trim/長さ制限)
 - 添付ZIPファイル検査: PASS (52/52 JPEG, 52/52 under 5MB)
 - Gemini model configuration static check: PASS (`gemini-3.5-flash-lite` 固定)
@@ -66,7 +66,7 @@ Gemini APIキーを成果物へ埋め込まず、通常の自動テストではG
 
 
 ## 解析時保存防止
-- 「解析」は `POST /api/receipts/analyze` で画像SHA-256を計算し、`receipt_image_hash_registry`へINSERTする。レシート本文のINSERT/CREATE TABLEは行わない。
+- 「解析」は `POST /api/receipts/analyze` で画像SHA-256を計算し、`receipt_image_hash_registry`へ未登録状態でINSERTする。未保存ハッシュは再解析を許可し、レシート本文のINSERT/CREATE TABLEは行わない。
 - 旧 `POST /api/receipts` の解析＋保存エンドポイントは廃止し、解析操作から保存処理へ到達するBackend経路を削除した。
 - PostgreSQLへのレシート本文の追加は「PostgreSQLへ保存」押下時の `POST /api/receipts/save` に限定する。
 - 画像SHA-256は解析時に `receipt_image_hash_registry` へ保存し、保存時はSHA-256をキーに重複分だけ除外する。

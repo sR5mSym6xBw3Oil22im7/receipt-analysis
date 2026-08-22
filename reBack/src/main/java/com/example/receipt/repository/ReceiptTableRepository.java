@@ -47,14 +47,44 @@ public class ReceiptTableRepository {
 
     public void reserveImageHash(String sha256) {
         ensureImageHashRegistry();
+
+        List<String> registeredTables = jdbcTemplate.query(
+                "SELECT table_name FROM receipt_image_hash_registry WHERE image_sha256 = ?",
+                (rs, rowNum) -> rs.getString("table_name"),
+                sha256
+        );
+        if (!registeredTables.isEmpty() && registeredTables.getFirst() != null) {
+            throw duplicateReceiptImage();
+        }
+
         try {
-            jdbcTemplate.update(
+            int inserted = jdbcTemplate.update(
                     "INSERT INTO receipt_image_hash_registry (image_sha256, table_name) VALUES (?, NULL)",
                     sha256
             );
+            if (inserted == 1) {
+                return;
+            }
         } catch (DuplicateKeyException e) {
-            throw new ReceiptException(HttpStatus.CONFLICT, "DUPLICATE_RECEIPT_IMAGE", "同じレシート画像は既に解析または登録されています。");
+            // 別リクエストが解析中に確保した未登録ハッシュなら再解析を許可する。
+            List<String> currentTables = jdbcTemplate.query(
+                    "SELECT table_name FROM receipt_image_hash_registry WHERE image_sha256 = ?",
+                    (rs, rowNum) -> rs.getString("table_name"),
+                    sha256
+            );
+            if (!currentTables.isEmpty() && currentTables.getFirst() == null) {
+                return;
+            }
+            throw duplicateReceiptImage();
         }
+    }
+
+    private ReceiptException duplicateReceiptImage() {
+        return new ReceiptException(
+                HttpStatus.CONFLICT,
+                "DUPLICATE_RECEIPT_IMAGE",
+                "同じレシート画像は既にPostgreSQLへ登録されています。"
+        );
     }
 
     public String createReceiptTableAndInsert(String tableName, List<String> lines) {

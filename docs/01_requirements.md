@@ -35,7 +35,7 @@ Bootstrap、Tailwind CSS、SCSS、Figma等はコア機能に必須ではない�
 - 画像サイズ上限は5MBとする。添付ZIP内の最大ファイルは約1.73MBのため全画像が範囲内である。
 - 動的テーブル名はユーザー入力やGeminiの文字列を使用せず、BackendでUUIDから生成する。
 - Geminiの結果は `lines: string[]` のJSONとして受け取り、1行をDBの1レコードとして保存する。
-- `upload.html` の「解析」ボタン押下では各画像を `/api/receipts/analyze` へ送り、抽出テキストとSHA-256を画面表示用に受け取る。BackendはSHA-256を `receipt_image_hash_registry` へ登録し、同一ハッシュは409で拒否する。
+- `upload.html` の「解析」ボタン押下では各画像を `/api/receipts/analyze` へ送り、抽出テキストとSHA-256を画面表示用に受け取る。BackendはSHA-256を `receipt_image_hash_registry` へ未登録状態で確保し、未保存の同一ハッシュは再解析を許可する。保存済みの同一ハッシュだけ409で拒否する。
 - 解析完了後に「PostgreSQLへ保存」ボタンを有効化し、その押下時に各解析結果とSHA-256を保存APIへ送る。
 - 重複していない解析結果だけ `POST /api/receipts/save` へ送り、SHA-256の予約行へ新しいレシートテーブルを紐付ける。既存ハッシュの場合は409 `DUPLICATE_RECEIPT_IMAGE` を返して新規テーブルを作成しない。
 - 複数選択時に一部だけが登録済みでも処理全体を中止せず、その画像だけを警告表示して除外し、未登録の後続画像を継続して保存する。例: 5枚中2・3枚目が登録済みなら、2・3枚目は非登録、1・4・5枚目は登録する。

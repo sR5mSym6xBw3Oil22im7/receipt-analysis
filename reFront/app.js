@@ -8,6 +8,7 @@ const statusElement = document.getElementById("status");
 const resultCard = document.getElementById("result-card");
 const receiptResultsElement = document.getElementById("receipt-results");
 let analyzedReceipts = [];
+let analysisReady = false;
 let busy = false;
 
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
@@ -20,15 +21,18 @@ const API_KEY_RETRY_CODES = new Set([
 ]);
 
 function hasPendingReceipts() {
-  return analyzedReceipts.some((receipt) => !receipt.stored);
+  return analysisReady && analyzedReceipts.some((receipt) => !receipt.stored);
 }
 
 function updateSaveButton() {
-  saveButton.disabled = busy || !hasPendingReceipts();
+  const hasPending = hasPendingReceipts();
+  saveButton.classList.toggle("hidden", !hasPending);
+  saveButton.disabled = busy || !hasPending;
 }
 
 function invalidateAnalysis() {
   analyzedReceipts = [];
+  analysisReady = false;
   receiptResultsElement.replaceChildren();
   resultCard.classList.add("hidden");
   statusElement.textContent = "";
@@ -46,6 +50,7 @@ function resetUploadPagePreservingApiKey() {
   });
 
   analyzedReceipts = [];
+  analysisReady = false;
   receiptResultsElement.replaceChildren();
   resultCard.classList.add("hidden");
   statusElement.classList.remove("error-message");
@@ -55,6 +60,7 @@ function resetUploadPagePreservingApiKey() {
   submitButton.disabled = false;
   submitButton.textContent = "解析";
   saveButton.disabled = true;
+  saveButton.classList.add("hidden");
   saveButton.textContent = "PostgreSQLへ保存";
 }
 
@@ -194,6 +200,7 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   resultCard.classList.add("hidden");
   analyzedReceipts = [];
+  analysisReady = false;
   statusElement.classList.remove("error-message");
   statusElement.textContent = "";
   updateSaveButton();
@@ -243,8 +250,10 @@ form.addEventListener("submit", async (event) => {
       resultCard.classList.remove("hidden");
     }
 
+    analysisReady = true;
     statusElement.textContent = `${analyzedReceipts.length}枚の解析が完了しました。`;
   } catch (error) {
+    analysisReady = false;
     if (API_KEY_RETRY_CODES.has(error.code)) {
       showApiKeyRetry(error.code, error.message);
     } else {
@@ -273,6 +282,7 @@ saveButton.addEventListener("click", async () => {
   setBusy("save");
   statusElement.textContent = "";
 
+  let saveCompleted = false;
   try {
     for (const receipt of analyzedReceipts) {
       if (receipt.stored) continue;
@@ -291,13 +301,18 @@ saveButton.addEventListener("click", async () => {
     }
 
     statusElement.textContent = buildSaveCompletionMessage(analyzedReceipts);
+    saveCompleted = true;
   } catch (error) {
     const fileMessage = error.fileNumber ? `（画像${error.fileNumber}）` : "";
     statusElement.textContent = `保存エラー${fileMessage}: ${error.message}`;
   } finally {
-    // 登録成功・失敗のどちらでも、処理完了後に初期状態へ戻す。
-    resetUploadPagePreservingApiKey();
-    setBusy(null);
+    if (saveCompleted) {
+      // 保存成功後は初期状態へ戻し、次の解析を開始できるようにする。
+      resetUploadPagePreservingApiKey();
+    } else {
+      // 保存失敗時は解析結果と保存ボタンを残し、再試行できるようにする。
+      setBusy(null);
+    }
   }
 });
 

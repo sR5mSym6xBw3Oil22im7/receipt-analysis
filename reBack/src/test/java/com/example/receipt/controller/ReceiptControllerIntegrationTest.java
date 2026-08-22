@@ -102,7 +102,7 @@ class ReceiptControllerIntegrationTest {
     }
 
     @Test
-    void analyzeRejectsAnImageHashThatWasAlreadyAnalyzed() throws Exception {
+    void analyzeAllowsAnImageHashThatWasAnalyzedButNotSaved() throws Exception {
         mockMvc.perform(multipart("/api/receipts/analyze")
                         .file(sampleFile())
                         .param("geminiApiKey", "web-key"))
@@ -111,8 +111,7 @@ class ReceiptControllerIntegrationTest {
         mockMvc.perform(multipart("/api/receipts/analyze")
                         .file(sampleFile())
                         .param("geminiApiKey", "web-key"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("DUPLICATE_RECEIPT_IMAGE"));
+                .andExpect(status().isOk());
     }
 
     @Test
