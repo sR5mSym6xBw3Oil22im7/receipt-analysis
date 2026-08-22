@@ -30,5 +30,5 @@ Gemini APIキー関連のenvVarsは定義しない。
 mvn test
 ```
 
-## 重複登録防止
+## 保存
 `POST /api/receipts/check-duplicate` と `POST /api/receipts/save` は、`receipt_<uuid32>` 形式に完全一致する実レシートテーブルだけを重複確認対象にする。`receipt_analysis_drafts` や `receipt_uniqueness_registry` など `receipt_` で始まる管理テーブルは対象外とする。重複確認では一覧表示用のCOUNT/MAX集計を行わず、保存APIで既存データと一致した場合は409 `DUPLICATE_RECEIPT` を返して新しいテーブルをCREATEしない。JDBCクエリは20秒でタイムアウトし、DB障害時は503 `DATABASE_ERROR` のJSONを返す。

@@ -20,7 +20,7 @@ const API_KEY_RETRY_CODES = new Set([
 ]);
 
 function hasPendingReceipts() {
-  return analyzedReceipts.some((receipt) => !receipt.stored && !receipt.duplicate);
+  return analyzedReceipts.some((receipt) => !receipt.stored);
 }
 
 function updateSaveButton() {
@@ -67,23 +67,6 @@ fileInputs.forEach((input, index) => {
     if (!selectedFile) {
       nameElement.classList.remove("error-message");
       nameElement.textContent = "未選択";
-      return;
-    }
-
-    const isDuplicate = fileInputs.some((otherInput, otherIndex) => {
-      if (otherIndex === index) return false;
-      const otherFile = otherInput.files?.[0];
-      return otherFile
-        && otherFile.name === selectedFile.name
-        && otherFile.size === selectedFile.size
-        && otherFile.lastModified === selectedFile.lastModified
-        && otherFile.type === selectedFile.type;
-    });
-
-    if (isDuplicate) {
-      input.value = "";
-      nameElement.classList.add("error-message");
-      nameElement.textContent = "同じファイルが選択されました。別のファイルを選択してください。";
       return;
     }
 
@@ -156,28 +139,11 @@ async function readJsonResponse(response) {
   return response.json().catch(() => ({}));
 }
 
-async function checkDuplicate(lines) {
-  const response = await fetchSaveApi(`${API_BASE_URL}/api/receipts/check-duplicate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json; charset=UTF-8" },
-    body: JSON.stringify({ lines })
-  });
-  const body = await readJsonResponse(response);
-  if (!response.ok) {
-    const error = new Error(body.message || `HTTP ${response.status}`);
-    error.code = body.code || "";
-    error.httpStatus = response.status;
-    throw error;
-  }
-  return Boolean(body.duplicate);
-}
-
-async function saveReceipt(lines, idempotencyKey) {
+async function saveReceipt(lines) {
   const response = await fetchSaveApi(`${API_BASE_URL}/api/receipts/save`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json; charset=UTF-8",
-      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {})
     },
     body: JSON.stringify({ lines })
   });
@@ -191,11 +157,6 @@ async function saveReceipt(lines, idempotencyKey) {
   return body;
 }
 
-function createIdempotencyKey() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
-}
-
 function renderReceiptResults(receipts) {
   receiptResultsElement.replaceChildren();
   receipts.forEach((receipt, index) => {
@@ -207,13 +168,6 @@ function renderReceiptResults(receipts) {
     text.textContent = receipt.lines.join("\n");
 
     result.append(heading);
-    if (receipt.duplicate) {
-      const warning = document.createElement("p");
-      warning.className = "help-text";
-      warning.textContent = "既存データと重複するため、PostgreSQLへ保存しませんでした。";
-      warning.classList.add("error-message");
-      result.append(warning);
-    }
     result.append(text);
     receiptResultsElement.append(result);
   });
@@ -226,13 +180,6 @@ function buildSaveCompletionMessage(receipts) {
 
   if (storedNumbers.length) {
     return `画像${storedNumbers.join("、")}をPostgreSQLへ保存しました。`;
-  }
-
-  const duplicateNumbers = receipts
-    .filter((receipt) => receipt.duplicate)
-    .map((receipt) => receipt.fileNumber);
-  if (duplicateNumbers.length) {
-    return `警告: 画像${duplicateNumbers.join("、")}は既存データと重複するため、PostgreSQLへ保存しませんでした。`;
   }
 
   return "PostgreSQLへ保存する対象がありません。";
@@ -289,9 +236,7 @@ form.addEventListener("submit", async (event) => {
         fileNumber,
         lines: Array.isArray(body.lines) ? body.lines : [],
         tableName: "",
-        stored: false,
-        duplicate: false,
-        idempotencyKey: createIdempotencyKey()
+        stored: false
       });
       renderReceiptResults(analyzedReceipts);
       resultCard.classList.remove("hidden");
@@ -329,32 +274,16 @@ saveButton.addEventListener("click", async () => {
 
   try {
     for (const receipt of analyzedReceipts) {
-      if (receipt.stored || receipt.duplicate) continue;
-
-      statusElement.textContent = `画像${receipt.fileNumber}の重複チェック中です。`;
-      let duplicate = await checkDuplicate(receipt.lines);
-      if (duplicate) {
-        receipt.duplicate = true;
-        renderReceiptResults(analyzedReceipts);
-        statusElement.textContent = `画像${receipt.fileNumber}は既存データと重複するため、保存しませんでした。`;
-        continue;
-      }
+      if (receipt.stored) continue;
 
       try {
         statusElement.textContent = `画像${receipt.fileNumber}をPostgreSQLへ保存中です。`;
-        const saved = await saveReceipt(receipt.lines, receipt.idempotencyKey);
+        const saved = await saveReceipt(receipt.lines);
         receipt.tableName = saved.tableName || "";
         receipt.stored = true;
       } catch (error) {
-        // 重複チェック直後に別処理が同じレシートを保存した場合も二重登録しない。
-        if (error.code === "DUPLICATE_RECEIPT" || error.httpStatus === 409) {
-          receipt.duplicate = true;
-          renderReceiptResults(analyzedReceipts);
-          statusElement.textContent = `画像${receipt.fileNumber}は既存データと重複するため、保存しませんでした。`;
-        } else {
-          error.fileNumber = receipt.fileNumber;
-          throw error;
-        }
+        error.fileNumber = receipt.fileNumber;
+        throw error;
       }
 
       renderReceiptResults(analyzedReceipts);

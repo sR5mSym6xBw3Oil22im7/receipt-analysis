@@ -33,7 +33,7 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(new ErrorResponse(
                         "DATABASE_ERROR",
-                        "PostgreSQLとの通信または重複確認に失敗しました。時間をおいて再度保存してください。",
+                        "PostgreSQLとの通信に失敗しました。時間をおいて再度保存してください。",
                         OffsetDateTime.now()
                 ));
     }

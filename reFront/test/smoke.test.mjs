@@ -14,10 +14,7 @@ test("frontend accepts JPEG and PNG", () => {
   assert.equal((html.match(/name="file"/g) ?? []).length, 5);
   assert.equal((html.match(/ファイルを選択/g) ?? []).length, 5);
   assert.match(html, /selected-file-name/);
-  assert.match(js, /同じファイルが選択されました/);
-  assert.match(js, /lastModified/);
   assert.match(html + js, /error-message/);
-  assert.match(js, /nameElement\.textContent = "同じファイルが選択されました/);
 });
 
 
@@ -42,7 +39,6 @@ test("analysis and PostgreSQL save are separate operations", () => {
   assert.match(html, /id="submit-button"[^>]*>解析<\/button>/);
   assert.match(html, /id="save-button"[^>]*>PostgreSQLへ保存<\/button>/);
   assert.match(js, /\/api\/receipts\/analyze/);
-  assert.match(js, /\/api\/receipts\/check-duplicate/);
   assert.match(js, /\/api\/receipts\/save/);
   assert.match(js, /saveButton\.addEventListener\("click"/);
   assert.match(js, /枚の解析が完了しました/);
@@ -51,23 +47,14 @@ test("analysis and PostgreSQL save are separate operations", () => {
   assert.doesNotMatch(js, /PostgreSQL保存済み/);
 });
 
-test("save button skips duplicates and continues with later receipts", () => {
-  assert.match(js, /checkDuplicate\(receipt\.lines\)/);
-  assert.match(js, /if \(duplicate\)/);
-  assert.match(js, /receipt\.duplicate = true/);
+test("save button stores each analyzed receipt", () => {
   assert.match(js, /continue;/);
-  assert.match(js, /saveReceipt\(receipt\.lines, receipt\.idempotencyKey\)/);
-  assert.match(js, /Idempotency-Key/);
-  assert.match(js, /createIdempotencyKey/);
+  assert.match(js, /saveReceipt\(receipt\.lines\)/);
   assert.match(js, /if \(busy\) return;/);
   assert.match(js, /receipt\.stored = true/);
-  assert.match(js, /DUPLICATE_RECEIPT/);
   assert.match(js, /SAVE_REQUEST_TIMEOUT_MS/);
   assert.match(js, /AbortController/);
   assert.match(js, /バックエンドサーバーから応答がありません/);
-  assert.match(js, /既存データと重複するため/);
-  assert.match(js, /重複チェック中です/);
-  assert.match(js, /保存しませんでした/);
   assert.doesNotMatch(js, /PostgreSQLへ追加しました/);
   assert.match(js, /resetUploadPagePreservingApiKey/);
   assert.match(js, /apiKeyInput\.value = geminiApiKey/);

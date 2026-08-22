@@ -5,7 +5,7 @@ GitHub Pagesで配信できる静的Frontend。
 1. `config.js` のRender Backend URLを変更する。
 2. GitHub Pagesへ `index.html`, `styles.css`, `config.js`, `app.js` を公開する。
 3. `upload.html` でGemini APIキーと最大5枚のレシート画像を選び、「解析」を押す。ここでは文字抽出と画面表示だけを行い、PostgreSQLへは保存しない。
-4. 解析結果を確認して「PostgreSQLへ保存」を押す。保存時に既存データとの重複を確認し、未登録レシートだけを保存する。
+4. 解析結果を確認して「PostgreSQLへ保存」を押す。解析結果を保存する。
 
 Smoke test:
 ```bash
@@ -17,7 +17,7 @@ Gemini APIキーは `upload.html` のpassword入力欄で必須入力する。�
 
 Geminiの利用上限またはキー拒否エラーを受け取った場合はAPIキー欄へフォーカスし、次のキーへ入れ替えて同じ画像を再送できる。入力値はlocalStorage/sessionStorage/PostgreSQLへ保存しない。
 
-## 重複レシート
+## 保存
 「PostgreSQLへ保存」押下時にFrontendが `/api/receipts/check-duplicate` で各解析結果を確認する。既存データと重複する画像は警告表示して保存せず、未登録画像だけ `/api/receipts/save` へ送信する。複数画像の途中で重複が見つかっても処理は継続する。保存APIが409 `DUPLICATE_RECEIPT` を返した場合も、その画像だけを重複として扱い後続画像の保存を続ける。保存系APIは30秒でタイムアウトし、Backendから応答がない場合も画面を無期限に待機させずエラーメッセージを表示する。
 
 

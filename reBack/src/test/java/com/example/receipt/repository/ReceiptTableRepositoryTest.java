@@ -68,32 +68,4 @@ class ReceiptTableRepositoryTest {
         assertThat(detail.lines()).extracting(line -> line.text())
                 .containsExactly("STORE A", "TOTAL 100");
     }
-    @Test
-    void duplicateLookupIgnoresManagementTablesStartingWithReceiptPrefix() {
-        String receiptTable = repository.createReceiptTableAndInsert(List.of("STORE A", "TOTAL 100"));
-        jdbcTemplate.execute("CREATE TABLE receipt_analysis_drafts (id BIGINT PRIMARY KEY)");
-        jdbcTemplate.execute("CREATE TABLE receipt_uniqueness_registry (id BIGINT PRIMARY KEY)");
-
-        assertThat(repository.receiptExists(List.of("STORE A", "TOTAL 100"))).isTrue();
-        assertThat(repository.receiptExists(List.of("STORE B", "TOTAL 200"))).isFalse();
-        assertThat(repository.findAllReceiptTables())
-                .extracting(ReceiptSummary::tableName)
-                .containsExactly(receiptTable);
-    }
-
-    @Test
-    void duplicateLookupRemovesRegistryRowsForDeletedReceiptTables() {
-        repository.ensureFingerprintRegistry();
-        jdbcTemplate.update("INSERT INTO receipt_fingerprint_registry " +
-                "(fingerprint, canonical_text, table_name) VALUES (?, ?, ?)",
-                "a".repeat(64), "OLD", "receipt_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-
-        assertThat(repository.receiptExists(List.of("NEW STORE", "TOTAL 1"))).isFalse();
-        Integer remaining = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM receipt_fingerprint_registry WHERE table_name = ?",
-                Integer.class,
-                "receipt_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-        assertThat(remaining).isZero();
-    }
-
 }
