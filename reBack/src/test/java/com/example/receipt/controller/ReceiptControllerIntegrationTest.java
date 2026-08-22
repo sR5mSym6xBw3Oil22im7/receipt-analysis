@@ -2,6 +2,7 @@ package com.example.receipt.controller;
 
 import com.example.receipt.dto.ReceiptText;
 import com.example.receipt.service.ReceiptAnalyzer;
+import com.example.receipt.repository.ReceiptTableName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,6 +97,32 @@ class ReceiptControllerIntegrationTest {
     }
 
     @Test
+    void normalizedUtf8TextIsProtectedByFingerprintAndIdempotencyIsReplaySafe() throws Exception {
+        String requestBody = "{\"lines\":[\"ＡＢＣ STORE\",\"TOTAL\\u00a0100\"]}";
+
+                mockMvc.perform(post("/api/receipts/save")
+                        .header("Idempotency-Key", "receipt-retry-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lineCount").value(2))
+                .andExpect(jsonPath("$.lines[0]").value("ＡＢＣ STORE"))
+                .andExpect(jsonPath("$.lines[1]").value("TOTAL 100"));
+
+        mockMvc.perform(post("/api/receipts/save")
+                        .header("Idempotency-Key", "receipt-retry-1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"lines\":[\"ABCSTORE\",\"TOTAL100\"]}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/receipts/save")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"lines\":[\"ABC\\nSTORE\",\"TOTAL 100\"]}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("DUPLICATE_RECEIPT"));
+    }
+
+    @Test
     void duplicateCheckIgnoresNonReceiptManagementTablesAndReturnsDuplicate() throws Exception {
         String requestBody = """
                 {"lines":["SAMPLE STORE","ITEM 100","TOTAL 100"]}
@@ -115,7 +142,7 @@ class ReceiptControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.duplicate").value(true));
 
-        assertThat(receiptTableCount()).isEqualTo(3);
+        assertThat(receiptTableCount()).isEqualTo(1);
     }
 
     @Test
@@ -148,12 +175,11 @@ class ReceiptControllerIntegrationTest {
     }
 
     private int receiptTableCount() {
-        Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM information_schema.tables " +
-                        "WHERE table_schema = 'public' AND table_name LIKE 'receipt_%'",
-                Integer.class
-        );
-        return count == null ? 0 : count;
+        return (int) jdbcTemplate.queryForList(
+                "SELECT table_name FROM information_schema.tables " +
+                        "WHERE LOWER(table_schema) = 'public' AND LOWER(table_name) LIKE 'receipt_%'",
+                String.class
+        ).stream().filter(ReceiptTableName::isSafe).count();
     }
 
     @TestConfiguration

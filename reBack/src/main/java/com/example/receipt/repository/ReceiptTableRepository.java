@@ -7,6 +7,7 @@ import com.example.receipt.exception.ReceiptException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
@@ -17,6 +18,8 @@ import java.util.List;
 
 @Repository
 public class ReceiptTableRepository {
+    private static final String REGISTRY = "receipt_fingerprint_registry";
+    private static final String MIGRATIONS = "receipt_duplicate_migrations";
     private final JdbcTemplate jdbcTemplate;
 
     public ReceiptTableRepository(JdbcTemplate jdbcTemplate) {
@@ -25,6 +28,10 @@ public class ReceiptTableRepository {
 
     public String createReceiptTableAndInsert(List<String> lines) {
         String tableName = ReceiptTableName.generate();
+        return createReceiptTableAndInsert(tableName, lines);
+    }
+
+    public String createReceiptTableAndInsert(String tableName, List<String> lines) {
         assertSafeTableName(tableName);
 
         String createSql = """
@@ -78,19 +85,119 @@ public class ReceiptTableRepository {
     }
 
     public boolean receiptExists(List<String> lines) {
-        // 重複確認では一覧画面用の COUNT/MAX 集計を行わない。
-        // receipt_% という名前の管理テーブルが存在しても、実レシート用の安全なテーブル名だけを対象にする。
+        ensureFingerprintRegistry();
+        backfillFingerprintRegistry();
+        String fingerprint = com.example.receipt.service.ReceiptFingerprint.sha256(
+                com.example.receipt.service.ReceiptFingerprint.canonicalText(lines));
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + REGISTRY + " WHERE fingerprint = ?", Integer.class, fingerprint);
+        return count != null && count > 0;
+    }
+
+    public void ensureFingerprintRegistry() {
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + REGISTRY + " (" +
+                "fingerprint VARCHAR(64) PRIMARY KEY, canonical_text TEXT NOT NULL, " +
+                "table_name VARCHAR(64) NOT NULL UNIQUE, idempotency_key VARCHAR(128) UNIQUE, " +
+                "created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + MIGRATIONS + " (" +
+                "fingerprint VARCHAR(64) NOT NULL, duplicate_table_name VARCHAR(64) NOT NULL, " +
+                "canonical_table_name VARCHAR(64) NOT NULL, detected_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
+                "PRIMARY KEY (fingerprint, duplicate_table_name))");
+    }
+
+    /** Serialize save attempts for the same receipt fingerprint in PostgreSQL. */
+    public void lockFingerprint(String fingerprint) {
+        if (!isPostgreSql()) return;
+        jdbcTemplate.query(
+                "SELECT pg_advisory_xact_lock(hashtext(?))",
+                ps -> ps.setString(1, fingerprint),
+                rs -> {
+                    while (rs.next()) {
+                        // pg_advisory_xact_lock returns void; consuming the result releases the JDBC statement.
+                    }
+                    return null;
+                }
+        );
+    }
+
+    public void backfillFingerprintRegistry() {
+        ensureFingerprintRegistry();
+        pruneOrphanRegistryRows();
         for (String tableName : findReceiptTableNames()) {
-            List<String> existingLines = jdbcTemplate.query(
-                    "SELECT text FROM " + tableName + " ORDER BY line_no",
-                    (rs, rowNum) -> rs.getString("text")
-            );
-            if (existingLines.equals(lines)) {
-                return true;
+            List<String> lines = jdbcTemplate.query("SELECT text FROM " + tableName + " ORDER BY line_no", (rs, rowNum) -> rs.getString("text"));
+            String canonical = com.example.receipt.service.ReceiptFingerprint.canonicalText(lines);
+            String fingerprint = com.example.receipt.service.ReceiptFingerprint.sha256(canonical);
+            // 旧方式（改行を含む指紋）で作られた台帳を新方式へ更新する。
+            jdbcTemplate.update("DELETE FROM " + REGISTRY + " WHERE table_name = ? AND fingerprint <> ?", tableName, fingerprint);
+            boolean inserted = insertBackfillRow(fingerprint, canonical, tableName);
+            if (!inserted) {
+                String canonicalTable = findTableByFingerprint(fingerprint).orElse(tableName);
+                if (!canonicalTable.equals(tableName)) {
+                    try {
+                        jdbcTemplate.update("INSERT INTO " + MIGRATIONS + " (fingerprint, duplicate_table_name, canonical_table_name) VALUES (?, ?, ?)", fingerprint, tableName, canonicalTable);
+                    } catch (DataIntegrityViolationException ignored) {
+                        // 移行処理を再実行しても同じ重複記録を増やさない。
+                    }
+                }
             }
         }
-        return false;
     }
+
+    /** Keep the registry consistent when an old version dropped a receipt table first. */
+    private void pruneOrphanRegistryRows() {
+        jdbcTemplate.update("DELETE FROM " + MIGRATIONS + " m WHERE " +
+                "NOT EXISTS (SELECT 1 FROM information_schema.tables t " +
+                "WHERE LOWER(t.table_schema) = 'public' AND LOWER(t.table_name) = LOWER(m.duplicate_table_name))");
+        jdbcTemplate.update("DELETE FROM " + REGISTRY + " r WHERE " +
+                "NOT EXISTS (SELECT 1 FROM information_schema.tables t " +
+                "WHERE LOWER(t.table_schema) = 'public' AND LOWER(t.table_name) = LOWER(r.table_name))");
+    }
+
+    private boolean insertBackfillRow(String fingerprint, String canonicalText, String tableName) {
+        if (isPostgreSql()) {
+            return jdbcTemplate.update("INSERT INTO " + REGISTRY + " (fingerprint, canonical_text, table_name) VALUES (?, ?, ?) ON CONFLICT DO NOTHING", fingerprint, canonicalText, tableName) == 1;
+        }
+        try {
+            return jdbcTemplate.update("INSERT INTO " + REGISTRY + " (fingerprint, canonical_text, table_name) VALUES (?, ?, ?)", fingerprint, canonicalText, tableName) == 1;
+        } catch (DataIntegrityViolationException ignored) {
+            return false;
+        }
+    }
+
+    private boolean isPostgreSql() {
+        try (var connection = jdbcTemplate.getDataSource().getConnection()) {
+            return connection.getMetaData().getDatabaseProductName().toLowerCase().contains("postgres");
+        } catch (SQLException e) {
+            throw new IllegalStateException("DBの種類を判定できません。", e);
+        }
+    }
+
+    public java.util.Optional<String> findTableByFingerprint(String fingerprint) {
+        List<String> values = jdbcTemplate.query("SELECT table_name FROM " + REGISTRY + " WHERE fingerprint = ?", (rs, rowNum) -> rs.getString(1), fingerprint);
+        return values.stream().findFirst();
+    }
+
+    public java.util.Optional<RegisteredReceipt> findByIdempotencyKey(String key) {
+        if (key == null || key.isBlank()) return java.util.Optional.empty();
+        List<RegisteredReceipt> values = jdbcTemplate.query("SELECT fingerprint, table_name FROM " + REGISTRY + " WHERE idempotency_key = ?", (rs, rowNum) -> new RegisteredReceipt(rs.getString(1), rs.getString(2)), key);
+        return values.stream().findFirst();
+    }
+
+    public void registerFingerprint(String fingerprint, String canonicalText, String tableName, String idempotencyKey) {
+        jdbcTemplate.update("INSERT INTO " + REGISTRY + " (fingerprint, canonical_text, table_name, idempotency_key) VALUES (?, ?, ?, ?)", fingerprint, canonicalText, tableName, idempotencyKey);
+    }
+
+    /**
+     * Reserve the fingerprint before creating the dynamic receipt table.
+     * The caller must keep this operation and table creation in one transaction.
+     */
+    public String reserveFingerprint(String fingerprint, String canonicalText, String idempotencyKey) {
+        String tableName = ReceiptTableName.generate();
+        jdbcTemplate.update("INSERT INTO " + REGISTRY + " (fingerprint, canonical_text, table_name, idempotency_key) VALUES (?, ?, ?, ?)",
+                fingerprint, canonicalText, tableName, idempotencyKey);
+        return tableName;
+    }
+
+    public record RegisteredReceipt(String fingerprint, String tableName) {}
 
     public void deleteReceipt(String tableName) {
         assertSafeTableName(tableName);
@@ -98,6 +205,8 @@ public class ReceiptTableRepository {
             throw new ReceiptException(HttpStatus.NOT_FOUND, "RECEIPT_NOT_FOUND", "指定されたレシートが見つかりません。");
         }
         jdbcTemplate.execute("DROP TABLE " + tableName);
+        if (tableExists(REGISTRY)) jdbcTemplate.update("DELETE FROM " + REGISTRY + " WHERE table_name = ?", tableName);
+        if (tableExists(MIGRATIONS)) jdbcTemplate.update("DELETE FROM " + MIGRATIONS + " WHERE duplicate_table_name = ? OR canonical_table_name = ?", tableName, tableName);
     }
 
     private List<String> findReceiptTableNames() {

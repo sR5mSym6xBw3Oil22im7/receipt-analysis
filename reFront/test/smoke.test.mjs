@@ -22,7 +22,7 @@ test("frontend accepts JPEG and PNG", () => {
 
 
 test("upload page cache-busts app.js so old auto-save code is not reused", () => {
-  assert.match(html, /<script src="\.\/app\.js\?v=20260821-8"><\/script>/);
+  assert.match(html, /<script src="\.\/app\.js\?v=20260821-11"><\/script>/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {
@@ -56,7 +56,10 @@ test("save button skips duplicates and continues with later receipts", () => {
   assert.match(js, /if \(duplicate\)/);
   assert.match(js, /receipt\.duplicate = true/);
   assert.match(js, /continue;/);
-  assert.match(js, /saveReceipt\(receipt\.lines\)/);
+  assert.match(js, /saveReceipt\(receipt\.lines, receipt\.idempotencyKey\)/);
+  assert.match(js, /Idempotency-Key/);
+  assert.match(js, /createIdempotencyKey/);
+  assert.match(js, /if \(busy\) return;/);
   assert.match(js, /receipt\.stored = true/);
   assert.match(js, /DUPLICATE_RECEIPT/);
   assert.match(js, /SAVE_REQUEST_TIMEOUT_MS/);

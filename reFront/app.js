@@ -172,10 +172,13 @@ async function checkDuplicate(lines) {
   return Boolean(body.duplicate);
 }
 
-async function saveReceipt(lines) {
+async function saveReceipt(lines, idempotencyKey) {
   const response = await fetchSaveApi(`${API_BASE_URL}/api/receipts/save`, {
     method: "POST",
-    headers: { "Content-Type": "application/json; charset=UTF-8" },
+    headers: {
+      "Content-Type": "application/json; charset=UTF-8",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {})
+    },
     body: JSON.stringify({ lines })
   });
   const body = await readJsonResponse(response);
@@ -186,6 +189,11 @@ async function saveReceipt(lines) {
     throw error;
   }
   return body;
+}
+
+function createIdempotencyKey() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
 }
 
 function renderReceiptResults(receipts) {
@@ -282,7 +290,8 @@ form.addEventListener("submit", async (event) => {
         lines: Array.isArray(body.lines) ? body.lines : [],
         tableName: "",
         stored: false,
-        duplicate: false
+        duplicate: false,
+        idempotencyKey: createIdempotencyKey()
       });
       renderReceiptResults(analyzedReceipts);
       resultCard.classList.remove("hidden");
@@ -307,6 +316,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 saveButton.addEventListener("click", async () => {
+  if (busy) return;
   if (!hasPendingReceipts()) {
     statusElement.textContent = "PostgreSQLへ保存する未保存の解析結果がありません。先に解析してください。";
     updateSaveButton();
@@ -332,7 +342,7 @@ saveButton.addEventListener("click", async () => {
 
       try {
         statusElement.textContent = `画像${receipt.fileNumber}をPostgreSQLへ保存中です。`;
-        const saved = await saveReceipt(receipt.lines);
+        const saved = await saveReceipt(receipt.lines, receipt.idempotencyKey);
         receipt.tableName = saved.tableName || "";
         receipt.stored = true;
       } catch (error) {

@@ -3,6 +3,7 @@ package com.example.receipt.repository;
 import com.example.receipt.dto.ReceiptDetail;
 import com.example.receipt.dto.ReceiptSummary;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
 import org.springframework.context.annotation.Import;
@@ -27,6 +28,14 @@ class ReceiptTableRepositoryTest {
 
     @Autowired
     JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void clearTables() {
+        jdbcTemplate.queryForList(
+                "SELECT table_name FROM information_schema.tables WHERE LOWER(table_schema) = 'public' AND LOWER(table_name) LIKE 'receipt_%'",
+                String.class
+        ).forEach(name -> jdbcTemplate.execute("DROP TABLE " + name));
+    }
 
     @Test
     void createsOneIndependentTablePerReceiptAndInsertsLines() {
@@ -70,6 +79,21 @@ class ReceiptTableRepositoryTest {
         assertThat(repository.findAllReceiptTables())
                 .extracting(ReceiptSummary::tableName)
                 .containsExactly(receiptTable);
+    }
+
+    @Test
+    void duplicateLookupRemovesRegistryRowsForDeletedReceiptTables() {
+        repository.ensureFingerprintRegistry();
+        jdbcTemplate.update("INSERT INTO receipt_fingerprint_registry " +
+                "(fingerprint, canonical_text, table_name) VALUES (?, ?, ?)",
+                "a".repeat(64), "OLD", "receipt_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+
+        assertThat(repository.receiptExists(List.of("NEW STORE", "TOTAL 1"))).isFalse();
+        Integer remaining = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM receipt_fingerprint_registry WHERE table_name = ?",
+                Integer.class,
+                "receipt_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        assertThat(remaining).isZero();
     }
 
 }
