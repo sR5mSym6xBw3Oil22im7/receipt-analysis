@@ -11,12 +11,7 @@ const selectedTableNames = new Set();
 let receiptCount = 0;
 
 function configureBackLink() {
-  const from = new URLSearchParams(window.location.search).get("from");
-  const referrerPath = document.referrer ? new URL(document.referrer).pathname.split("/").pop() : "";
-  const target = from === "dashboard" || (!from && referrerPath === "dashboard.html")
-    ? "./dashboard.html"
-    : "./index.html";
-  backLink.href = target;
+  backLink.href = "./index.html";
 }
 
 function updateDeleteSelectedButton() {
