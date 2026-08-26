@@ -12,6 +12,7 @@ let analysisReady = false;
 let busy = false;
 
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
+const ANALYZE_REQUEST_TIMEOUT_MS = 120000;
 const SAVE_REQUEST_TIMEOUT_MS = 30000;
 const API_KEY_RETRY_CODES = new Set([
   "GEMINI_QUOTA_EXCEEDED",
@@ -114,11 +115,34 @@ function showApiKeyRetry(errorCode, fallbackMessage) {
   statusElement.textContent = `エラー: ${fallbackMessage}`;
 }
 
-async function analyzeReceipt(formData) {
-  return fetch(`${API_BASE_URL}/api/receipts/analyze`, {
-    method: "POST",
-    body: formData
-  });
+async function analyzeReceipt(formData, fileNumber) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ANALYZE_REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/receipts/analyze`, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal
+    });
+    const body = await response.json().catch((error) => {
+      if (error?.name === "AbortError") throw error;
+      return {};
+    });
+    return { response, body };
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error(
+        "バックエンドサーバーから応答がありません。通信状態またはRenderの稼働状態を確認して、再度解析してください。"
+      );
+      timeoutError.code = "BACKEND_TIMEOUT";
+      timeoutError.fileNumber = fileNumber;
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function isZipFile(file) {
@@ -334,14 +358,13 @@ form.addEventListener("submit", async (event) => {
   try {
     const expandedFiles = await expandSelectedFile(selectedInput[0].file);
     const selectedFiles = expandedFiles.map((file, index) => ({ file, fileNumber: index + 1 }));
-    statusElement.textContent = `${selectedFiles.length}枚の画像を解析中です。`;
     for (const { file, fileNumber } of selectedFiles) {
+      statusElement.textContent = `画像${fileNumber}/${selectedFiles.length}を解析中です。`;
       const formData = new FormData();
       formData.append("file", file);
       formData.append("geminiApiKey", geminiApiKey);
 
-      const analyzeResponse = await analyzeReceipt(formData);
-      const body = await analyzeResponse.json().catch(() => ({}));
+      const { response: analyzeResponse, body } = await analyzeReceipt(formData, fileNumber);
       if (!analyzeResponse.ok) {
         const error = new Error(body.message || `HTTP ${analyzeResponse.status}`);
         error.code = body.code || "";

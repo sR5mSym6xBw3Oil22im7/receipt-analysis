@@ -24,9 +24,16 @@ test("ZIP analysis ignores directories but rejects other files and empty archive
   assert.match(js, /ZIPファイルにレシート画像がありません/);
 });
 
+test("analysis reports per-image progress and does not wait forever", () => {
+  assert.match(js, /ANALYZE_REQUEST_TIMEOUT_MS = 120000/);
+  assert.match(js, /signal: controller\.signal/);
+  assert.match(js, /画像\$\{fileNumber\}\/\$\{selectedFiles\.length\}を解析中です/);
+  assert.match(js, /BACKEND_TIMEOUT/);
+});
+
 
 test("upload page cache-busts app.js so old upload code is not reused", () => {
-  assert.match(html, /<script src="\.\/app\.js\?v=20260827-zip-directories"><\/script>/);
+  assert.match(html, /<script src="\.\/app\.js\?v=20260827-zip-directories-timeout"><\/script>/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {

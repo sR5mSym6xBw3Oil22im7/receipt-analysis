@@ -4,7 +4,7 @@ GitHub Pagesで配信できる静的Frontend。
 
 1. `config.js` のRender Backend URLを変更する。
 2. GitHub Pagesへ `index.html`, `styles.css`, `config.js`, `app.js` を公開する。
-3. `upload.html` でGemini APIキーとJPEG／PNG／ZIPのいずれか1ファイルを選び、「解析」を押す。ZIPの場合は中のディレクトリを無視してJPEG／PNG画像をすべて解析する。JPEG/PNG以外のファイルが含まれるZIP、または画像が1枚もないZIPは処理を中断する。ここでは文字抽出と画面表示だけを行い、PostgreSQLへは保存しない。
+3. `upload.html` でGemini APIキーとJPEG／PNG／ZIPのいずれか1ファイルを選び、「解析」を押す。ZIPの場合は中のディレクトリを無視してJPEG／PNG画像をすべて解析する。JPEG/PNG以外のファイルが含まれるZIP、または画像が1枚もないZIPは処理を中断する。複数画像は画像ごとの進捗を表示し、解析APIが120秒応答しない場合はタイムアウトとして終了する。ここでは文字抽出と画面表示だけを行い、PostgreSQLへは保存しない。
 4. 解析結果を確認して「PostgreSQLへ保存」を押す。解析結果を保存する。
 
 Smoke test:
