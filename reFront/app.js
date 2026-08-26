@@ -12,7 +12,7 @@ let analysisReady = false;
 let busy = false;
 
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
-const ANALYZE_REQUEST_TIMEOUT_MS = 120000;
+const ANALYZE_REQUEST_TIMEOUT_MS = 180000;
 const SAVE_REQUEST_TIMEOUT_MS = 30000;
 const API_KEY_RETRY_CODES = new Set([
   "GEMINI_QUOTA_EXCEEDED",
