@@ -17,9 +17,16 @@ test("frontend accepts JPEG, PNG, and ZIP", () => {
   assert.match(html + js, /error-message/);
 });
 
+test("ZIP analysis ignores directories but rejects other files and empty archives", () => {
+  assert.match(js, /function isZipDirectory\(name, versionMadeBy, externalAttributes\)/);
+  assert.match(js, /if \(isZipDirectory\(name, versionMadeBy, externalAttributes\)\) continue;/);
+  assert.match(js, /if \(!\/\\\.\(jpe\?g\|png\)\$\/i\.test\(name\)\)/);
+  assert.match(js, /ZIPファイルにレシート画像がありません/);
+});
+
 
 test("upload page cache-busts app.js so old upload code is not reused", () => {
-  assert.match(html, /<script src="\.\/app\.js\?v=20260822-zip"><\/script>/);
+  assert.match(html, /<script src="\.\/app\.js\?v=20260827-zip-directories"><\/script>/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {

@@ -137,6 +137,17 @@ function readZipString(bytes, start, length) {
   return new TextDecoder("utf-8", { fatal: false }).decode(bytes.slice(start, start + length));
 }
 
+function isZipDirectory(name, versionMadeBy, externalAttributes) {
+  if (name.endsWith("/")) return true;
+
+  // ZIP archives created on Windows store the directory bit in the low byte.
+  const hostSystem = versionMadeBy >>> 8;
+  if (hostSystem === 0) return (externalAttributes & 0x10) !== 0;
+
+  // ZIP archives created on Unix store the file type in the high mode bits.
+  return ((externalAttributes >>> 16) & 0xf000) === 0x4000;
+}
+
 async function inflateRaw(bytes) {
   if (typeof DecompressionStream !== "function") {
     throw new Error("このブラウザはZIP解凍に対応していません。最新のブラウザで再実行してください。");
@@ -178,11 +189,14 @@ async function unzipReceiptImages(zipFile) {
     const extraLength = view.getUint16(cursor + 30, true);
     const commentLength = view.getUint16(cursor + 32, true);
     const localOffset = view.getUint32(cursor + 42, true);
+    const versionMadeBy = view.getUint16(cursor + 6, true);
+    const externalAttributes = view.getUint32(cursor + 38, true);
     const name = readZipString(archive, cursor + 46, nameLength);
     cursor += 46 + nameLength + extraLength + commentLength;
 
+    if (isZipDirectory(name, versionMadeBy, externalAttributes)) continue;
     if ((flags & 1) !== 0) throw new Error(`ZIP内のファイル「${name}」は暗号化されています。処理を中断しました。`);
-    if (name.endsWith("/") || !/\.(jpe?g|png)$/i.test(name)) {
+    if (!/\.(jpe?g|png)$/i.test(name)) {
       throw new Error(`ZIP内にJPEG/PNG以外のファイル「${name}」があるため、処理を中断しました。`);
     }
     if (localOffset + 30 > archive.length || view.getUint32(localOffset, true) !== 0x04034b50) {
