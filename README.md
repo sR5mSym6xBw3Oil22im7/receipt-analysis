@@ -63,7 +63,7 @@ python3 -m http.server 5051
 ブラウザで `http://localhost:5051` を開き、Gemini APIキーとレシート画像を入力する。
 
 ## GitHub Pages
-`reFront` の内容をGitHub Pagesへ公開する。公開前に `reFront/config.js` の `YOUR-RENDER-SERVICE` を実際のRender Backendホスト名へ変更する。
+`reFront` の内容をGitHub Pagesへ公開する。Frontendは本番環境で `https://receipt-analysis-b8po.onrender.com`、ローカル環境で `http://localhost:8081` を使用する。
 
 APIキーそのものは `upload.html` や `config.js` へ書き込まず、Web画面のpassword入力欄から都度入力する。
 

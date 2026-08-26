@@ -65,7 +65,7 @@ test("frontend has a configurable Render backend URL", () => {
   assert.match(config, /API_BASE_URL/);
   assert.match(config, /onrender\.com/);
   assert.doesNotMatch(config, /YOUR-RENDER-SERVICE/);
-  assert.match(config, /receipt-reback\.onrender\.com/);
+  assert.match(config, /receipt-analysis-b8po\.onrender\.com/);
 });
 
 test("frontend requires a masked Gemini API key", () => {

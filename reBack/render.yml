@@ -9,7 +9,7 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: APP_FRONTEND_ORIGIN
-        sync: false
+        value: https://sr5msym6xbw3oil22im7.github.io
       - key: DB_HOST
         fromDatabase:
           name: receipt-db

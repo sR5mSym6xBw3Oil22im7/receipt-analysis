@@ -7,5 +7,5 @@ window.APP_CONFIG = {
   // Keep the local workflow pointed at the local Spring Boot server.
   API_BASE_URL: isLocalFrontend
     ? "http://localhost:8081"
-    : "https://receipt-reback.onrender.com"
+    : "https://receipt-analysis-b8po.onrender.com"
 };
