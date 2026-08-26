@@ -14,26 +14,26 @@ services:
         value: https://sr5msym6xbw3oil22im7.github.io
       - key: DB_HOST
         fromDatabase:
-          name: receipt-db
+          name: receipt-analysis-psl-service
           property: host
       - key: DB_PORT
         fromDatabase:
-          name: receipt-db
+          name: receipt-analysis-psl-service
           property: port
       - key: DB_NAME
         fromDatabase:
-          name: receipt-db
+          name: receipt-analysis-psl-service
           property: database
       - key: DB_USER
         fromDatabase:
-          name: receipt-db
+          name: receipt-analysis-psl-service
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: receipt-db
+          name: receipt-analysis-psl-service
           property: password
 
 databases:
-  - name: receipt-db
+  - name: receipt-analysis-psl-service
     plan: free
     postgresMajorVersion: "18"
