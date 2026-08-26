@@ -1,0 +1,5 @@
+# Local Maven distribution used only by this workspace.
+/apache-maven-3.9.16/
+
+# Local editor/workspace settings.
+/.vscode/
