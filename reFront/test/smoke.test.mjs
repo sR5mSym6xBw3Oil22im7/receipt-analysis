@@ -8,6 +8,8 @@ const select = await readFile(new URL("../select.html", import.meta.url), "utf8"
 const js = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const selectJs = await readFile(new URL("../select.js", import.meta.url), "utf8");
 const config = await readFile(new URL("../config.js", import.meta.url), "utf8");
+const indexJs = await readFile(new URL("../index.js", import.meta.url), "utf8");
+const accessGuard = await readFile(new URL("../access-guard.js", import.meta.url), "utf8");
 
 test("frontend accepts JPEG, PNG, and ZIP", () => {
   assert.match(html, /accept="image\/jpeg,image\/png,\.zip,application\/zip"/);
@@ -91,7 +93,23 @@ test("frontend does not persist the Gemini API key in browser storage", () => {
 
 test("index links to upload and select pages", () => {
   assert.match(index, /href="\.\/upload\.html"/);
-  assert.match(index, /href="\.\/select\.html"/);
+  assert.match(index, /id="select-link"[^>]*href="\.\/select\.html"/);
+  assert.match(index, /<script src="\.\/index\.js"><\/script>/);
+});
+
+test("index hides the select link when PostgreSQL has no receipts", () => {
+  assert.match(indexJs, /fetch\(`\$\{API_BASE_URL\}\/api\/receipts`/);
+  assert.match(indexJs, /selectLink\.classList\.add\("hidden"\)/);
+  assert.match(indexJs, /Array\.isArray\(receipts\)/);
+  assert.match(indexJs, /selectLink\.classList\.toggle\("hidden", receipts\.length === 0\)/);
+});
+
+test("non-index pages redirect direct access to the index page", () => {
+  assert.match(select, /<script src="\.\/access-guard\.js"><\/script>/);
+  assert.match(html, /<script src="\.\/access-guard\.js"><\/script>/);
+  assert.match(accessGuard, /document\.referrer/);
+  assert.match(accessGuard, /referrerUrl\.pathname === indexUrl\.pathname/);
+  assert.match(accessGuard, /window\.location\.replace\(indexUrl\.href\)/);
 });
 
 test("select page loads receipt list and detail bubble", () => {
