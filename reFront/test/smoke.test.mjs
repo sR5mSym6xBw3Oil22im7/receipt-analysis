@@ -19,9 +19,23 @@ test("frontend accepts JPEG, PNG, and ZIP", () => {
   assert.match(html + js, /error-message/);
 });
 
+test("ZIP analysis ignores directories but rejects other files and empty archives", () => {
+  assert.match(js, /function isZipDirectory\(name, versionMadeBy, externalAttributes\)/);
+  assert.match(js, /if \(isZipDirectory\(name, versionMadeBy, externalAttributes\)\) continue;/);
+  assert.match(js, /if \(!\/\\\.\(jpe\?g\|png\)\$\/i\.test\(name\)\)/);
+  assert.match(js, /ZIPファイルにレシート画像がありません/);
+});
+
+test("analysis reports per-image progress and does not wait forever", () => {
+  assert.match(js, /ANALYZE_REQUEST_TIMEOUT_MS = 180000/);
+  assert.match(js, /signal: controller\.signal/);
+  assert.match(js, /画像\$\{fileNumber\}\/\$\{selectedFiles\.length\}を解析中です/);
+  assert.match(js, /BACKEND_TIMEOUT/);
+});
+
 
 test("upload page cache-busts app.js so old upload code is not reused", () => {
-  assert.match(html, /<script src="\.\/app\.js\?v=20260822-zip"><\/script>/);
+  assert.match(html, /<script src="\.\/app\.js\?v=20260827-zip-directories-timeout-180"><\/script>/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {
@@ -66,6 +80,8 @@ test("save button stores each analyzed receipt", () => {
 test("frontend has a configurable Render backend URL", () => {
   assert.match(config, /API_BASE_URL/);
   assert.match(config, /onrender\.com/);
+  assert.doesNotMatch(config, /YOUR-RENDER-SERVICE/);
+  assert.match(config, /receipt-analysis-b8po\.onrender\.com/);
 });
 
 test("frontend requires a masked Gemini API key", () => {

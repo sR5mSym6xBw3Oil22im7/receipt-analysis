@@ -12,6 +12,7 @@ let analysisReady = false;
 let busy = false;
 
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
+const ANALYZE_REQUEST_TIMEOUT_MS = 180000;
 const SAVE_REQUEST_TIMEOUT_MS = 30000;
 const API_KEY_RETRY_CODES = new Set([
   "GEMINI_QUOTA_EXCEEDED",
@@ -114,11 +115,34 @@ function showApiKeyRetry(errorCode, fallbackMessage) {
   statusElement.textContent = `エラー: ${fallbackMessage}`;
 }
 
-async function analyzeReceipt(formData) {
-  return fetch(`${API_BASE_URL}/api/receipts/analyze`, {
-    method: "POST",
-    body: formData
-  });
+async function analyzeReceipt(formData, fileNumber) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ANALYZE_REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/receipts/analyze`, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal
+    });
+    const body = await response.json().catch((error) => {
+      if (error?.name === "AbortError") throw error;
+      return {};
+    });
+    return { response, body };
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error(
+        "バックエンドサーバーから応答がありません。通信状態またはRenderの稼働状態を確認して、再度解析してください。"
+      );
+      timeoutError.code = "BACKEND_TIMEOUT";
+      timeoutError.fileNumber = fileNumber;
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function isZipFile(file) {
@@ -135,6 +159,17 @@ function isPng(bytes) {
 
 function readZipString(bytes, start, length) {
   return new TextDecoder("utf-8", { fatal: false }).decode(bytes.slice(start, start + length));
+}
+
+function isZipDirectory(name, versionMadeBy, externalAttributes) {
+  if (name.endsWith("/")) return true;
+
+  // ZIP archives created on Windows store the directory bit in the low byte.
+  const hostSystem = versionMadeBy >>> 8;
+  if (hostSystem === 0) return (externalAttributes & 0x10) !== 0;
+
+  // ZIP archives created on Unix store the file type in the high mode bits.
+  return ((externalAttributes >>> 16) & 0xf000) === 0x4000;
 }
 
 async function inflateRaw(bytes) {
@@ -178,11 +213,14 @@ async function unzipReceiptImages(zipFile) {
     const extraLength = view.getUint16(cursor + 30, true);
     const commentLength = view.getUint16(cursor + 32, true);
     const localOffset = view.getUint32(cursor + 42, true);
+    const versionMadeBy = view.getUint16(cursor + 6, true);
+    const externalAttributes = view.getUint32(cursor + 38, true);
     const name = readZipString(archive, cursor + 46, nameLength);
     cursor += 46 + nameLength + extraLength + commentLength;
 
+    if (isZipDirectory(name, versionMadeBy, externalAttributes)) continue;
     if ((flags & 1) !== 0) throw new Error(`ZIP内のファイル「${name}」は暗号化されています。処理を中断しました。`);
-    if (name.endsWith("/") || !/\.(jpe?g|png)$/i.test(name)) {
+    if (!/\.(jpe?g|png)$/i.test(name)) {
       throw new Error(`ZIP内にJPEG/PNG以外のファイル「${name}」があるため、処理を中断しました。`);
     }
     if (localOffset + 30 > archive.length || view.getUint32(localOffset, true) !== 0x04034b50) {
@@ -320,14 +358,13 @@ form.addEventListener("submit", async (event) => {
   try {
     const expandedFiles = await expandSelectedFile(selectedInput[0].file);
     const selectedFiles = expandedFiles.map((file, index) => ({ file, fileNumber: index + 1 }));
-    statusElement.textContent = `${selectedFiles.length}枚の画像を解析中です。`;
     for (const { file, fileNumber } of selectedFiles) {
+      statusElement.textContent = `画像${fileNumber}/${selectedFiles.length}を解析中です。`;
       const formData = new FormData();
       formData.append("file", file);
       formData.append("geminiApiKey", geminiApiKey);
 
-      const analyzeResponse = await analyzeReceipt(formData);
-      const body = await analyzeResponse.json().catch(() => ({}));
+      const { response: analyzeResponse, body } = await analyzeReceipt(formData, fileNumber);
       if (!analyzeResponse.ok) {
         const error = new Error(body.message || `HTTP ${analyzeResponse.status}`);
         error.code = body.code || "";

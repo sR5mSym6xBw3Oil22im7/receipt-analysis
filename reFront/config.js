@@ -1,5 +1,11 @@
+const isLocalFrontend = window.location.protocol === "file:"
+  || window.location.hostname === ""
+  || window.location.hostname === "localhost"
+  || window.location.hostname === "127.0.0.1";
+
 window.APP_CONFIG = {
-  API_BASE_URL: window.location.protocol === "file:" || window.location.hostname === "" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  // Keep the local workflow pointed at the local Spring Boot server.
+  API_BASE_URL: isLocalFrontend
     ? "http://localhost:8081"
-    : "https://YOUR-RENDER-SERVICE.onrender.com"
+    : "https://receipt-analysis-b8po.onrender.com"
 };
