@@ -9,6 +9,7 @@ import com.google.genai.errors.ApiException;
 import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.HttpOptions;
 import com.google.genai.types.Part;
 import com.google.genai.types.Schema;
 import com.google.genai.types.Type;
@@ -29,6 +30,7 @@ import java.time.LocalDateTime;
 @Service
 public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(GeminiReceiptAnalyzer.class);
+    private static final int GEMINI_REQUEST_TIMEOUT_MS = 180_000;
     private static final String PROMPT = """
             この画像はレシートです。印字されている文字列を上から下へ読み取り、
             1行ごとに lines 配列へ格納し、同じ解析結果から structuredData も作成してください。
@@ -63,7 +65,10 @@ public class GeminiReceiptAnalyzer implements ReceiptAnalyzer {
             throw new ReceiptException(HttpStatus.BAD_REQUEST, code, message);
         }
 
-        try (Client client = Client.builder().apiKey(activeApiKey).build()) {
+        try (Client client = Client.builder()
+                .apiKey(activeApiKey)
+                .httpOptions(HttpOptions.builder().timeout(GEMINI_REQUEST_TIMEOUT_MS).build())
+                .build()) {
             Map<String, Schema> properties = new LinkedHashMap<>();
             properties.put(
                     "lines",
