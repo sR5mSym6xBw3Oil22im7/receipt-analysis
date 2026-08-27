@@ -1,11 +1,18 @@
 const selectLink = document.getElementById("select-link");
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
+const STARTUP_CHECK_TIMEOUT_MS = 120000;
 
 selectLink.classList.add("hidden");
 
 async function updateSelectLinkVisibility() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), STARTUP_CHECK_TIMEOUT_MS);
+
   try {
-    const response = await fetch(`${API_BASE_URL}/api/receipts`, { cache: "no-store" });
+    const response = await fetch(`${API_BASE_URL}/api/receipts`, {
+      cache: "no-store",
+      signal: controller.signal
+    });
     if (!response.ok) {
       selectLink.classList.remove("hidden");
       return;
@@ -19,6 +26,8 @@ async function updateSelectLinkVisibility() {
     }
   } catch {
     selectLink.classList.remove("hidden");
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

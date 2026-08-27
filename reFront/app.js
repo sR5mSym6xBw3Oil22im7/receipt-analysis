@@ -12,7 +12,8 @@ let analysisReady = false;
 let busy = false;
 
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
-const ANALYZE_REQUEST_TIMEOUT_MS = 180000;
+const ANALYZE_REQUEST_TIMEOUT_MS = 210000;
+const ANALYSIS_WAIT_MESSAGE_INTERVAL_MS = 15000;
 const SAVE_REQUEST_TIMEOUT_MS = 30000;
 const API_KEY_RETRY_CODES = new Set([
   "GEMINI_QUOTA_EXCEEDED",
@@ -113,6 +114,15 @@ function showApiKeyRetry(errorCode, fallbackMessage) {
   }
 
   statusElement.textContent = `エラー: ${fallbackMessage}`;
+}
+
+function startAnalysisWaitMessage(fileNumber, totalFiles) {
+  let elapsedSeconds = 0;
+  return setInterval(() => {
+    elapsedSeconds += ANALYSIS_WAIT_MESSAGE_INTERVAL_MS / 1000;
+    statusElement.textContent =
+      `画像${fileNumber}/${totalFiles}を解析中です（${elapsedSeconds}秒経過）。Geminiの応答を待っています。ブラウザを閉じずにお待ちください。`;
+  }, ANALYSIS_WAIT_MESSAGE_INTERVAL_MS);
 }
 
 async function analyzeReceipt(formData, fileNumber) {
@@ -364,7 +374,14 @@ form.addEventListener("submit", async (event) => {
       formData.append("file", file);
       formData.append("geminiApiKey", geminiApiKey);
 
-      const { response: analyzeResponse, body } = await analyzeReceipt(formData, fileNumber);
+      const waitMessageTimer = startAnalysisWaitMessage(fileNumber, selectedFiles.length);
+      let analyzeResponse;
+      let body;
+      try {
+        ({ response: analyzeResponse, body } = await analyzeReceipt(formData, fileNumber));
+      } finally {
+        clearInterval(waitMessageTimer);
+      }
       if (!analyzeResponse.ok) {
         const error = new Error(body.message || `HTTP ${analyzeResponse.status}`);
         error.code = body.code || "";

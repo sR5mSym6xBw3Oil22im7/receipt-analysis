@@ -27,7 +27,11 @@ test("ZIP analysis ignores directories but rejects other files and empty archive
 });
 
 test("analysis reports per-image progress and does not wait forever", () => {
-  assert.match(js, /ANALYZE_REQUEST_TIMEOUT_MS = 180000/);
+  assert.match(js, /ANALYZE_REQUEST_TIMEOUT_MS = 210000/);
+  assert.match(js, /ANALYSIS_WAIT_MESSAGE_INTERVAL_MS = 15000/);
+  assert.match(js, /setInterval\(\(\) =>/);
+  assert.match(js, /clearInterval\(waitMessageTimer\)/);
+  assert.match(js, /ブラウザを閉じずにお待ちください/);
   assert.match(js, /signal: controller\.signal/);
   assert.match(js, /画像\$\{fileNumber\}\/\$\{selectedFiles\.length\}を解析中です/);
   assert.match(js, /BACKEND_TIMEOUT/);
@@ -35,7 +39,7 @@ test("analysis reports per-image progress and does not wait forever", () => {
 
 
 test("upload page cache-busts app.js so old upload code is not reused", () => {
-  assert.match(html, /<script src="\.\/app\.js\?v=20260827-zip-directories-timeout-180"><\/script>/);
+  assert.match(html, /<script src="\.\/app\.js\?v=20260827-zip-directories-timeout-210-wait15"><\/script>/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {
@@ -114,6 +118,8 @@ test("index links to upload and select pages", () => {
 });
 
 test("index hides the select link when PostgreSQL has no receipts", () => {
+  assert.match(indexJs, /STARTUP_CHECK_TIMEOUT_MS = 120000/);
+  assert.match(indexJs, /signal: controller\.signal/);
   assert.match(indexJs, /fetch\(`\$\{API_BASE_URL\}\/api\/receipts`/);
   assert.match(indexJs, /selectLink\.classList\.add\("hidden"\)/);
   assert.match(indexJs, /Array\.isArray\(receipts\)/);
