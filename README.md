@@ -7,7 +7,6 @@
 - `reFront/`: GitHub Pagesで公開するフロントエンド（HTML / CSS / JavaScript）
 - `reBack/`: Spring Boot 4.1.0・Java 21で構築したバックエンド
 - `doc/`: HTML形式の納品ドキュメント一式（要件定義、設計、テスト、リリース、運用等）
-- `test_evidence/`: 実行済みテストの記録
 
 フロントエンドはGitHub Pages、バックエンドはRender、データベースはPostgreSQLでの運用を想定しています。
 
