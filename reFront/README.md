@@ -1,28 +1,51 @@
 # reFront
 
-GitHub Pagesで配信できる静的Frontend。
+GitHub Pagesで公開する、レシート解析システムのフロントエンドです。HTML、CSS、JavaScriptで構成されています。
 
-1. `config.js` のRender Backend URLを変更する。
-2. GitHub Pagesへ `index.html`, `styles.css`, `config.js`, `app.js` を公開する。
-3. `upload.html` でGemini APIキーとJPEG／PNG／ZIPのいずれか1ファイルを選び、「解析」を押す。ZIPの場合は中のディレクトリを無視してJPEG／PNG画像をすべて解析する。JPEG/PNG以外のファイルが含まれるZIP、または画像が1枚もないZIPは処理を中断する。複数画像は画像ごとの進捗を表示し、解析APIが210秒応答しない場合はタイムアウトとして終了する。`index.js` の起動時データ確認は120秒でタイムアウトする。ここでは文字抽出と画面表示だけを行い、PostgreSQLへは保存しない。
-4. 解析結果を確認して「PostgreSQLへ保存」を押す。解析結果を保存する。
+## 使い方
 
-Smoke test:
+1. `config.js` のバックエンドURLを、利用する環境に合わせて設定します。
+2. ブラウザで `index.html` を開き、レシート一覧や詳細を確認します。
+3. `upload.html` でGemini APIキーとJPEG / PNG画像、または画像を含むZIPファイルを選択します。
+4. 「解析」を押すと、画像を1枚ずつ解析して抽出テキストを表示します。最大5枚まで処理できます。
+5. 内容を確認し、「PostgreSQLへ保存」を押すと未登録のレシートだけを保存します。
+
+ZIPファイル内はサブディレクトリを無視して検索します。JPEG / PNG以外のファイルが含まれるZIPや、画像が含まれないZIPは処理できません。
+
+## Gemini APIキー
+
+Gemini APIキーは `upload.html` のパスワード入力欄へ入力してください。入力したキーはリクエスト時だけバックエンドへ送信し、ソースコード、localStorage、sessionStorage、データベースには保存しません。
+
+利用上限またはキー拒否エラーが発生した場合は、入力欄のキーを入れ替えて同じ画像を再解析できます。
+
+## 保存処理
+
+「解析」では画像のSHA-256を重複チェック用に登録しますが、レシート本文は保存しません。本文の保存は「PostgreSQLへ保存」を押したときだけ実行されます。
+
+保存済み画像は警告として表示し、その画像をスキップして後続の画像を処理します。
+
+## 設定
+
+`config.js` の `API_BASE_URL` にバックエンドのURLを設定します。ローカル開発時の標準バックエンドURLは次のとおりです。
+
+```text
+http://localhost:8081
+```
+
+## ローカル起動
+
+```bash
+python3 -m http.server 5051
+```
+
+ブラウザで `http://localhost:5051` を開いてください。
+
+## GitHub Pagesへの公開
+
+このディレクトリのHTML、CSS、JavaScript、設定ファイルをGitHub Pagesへ公開します。公開前に `config.js` のバックエンドURLを本番環境のURLへ変更してください。
+
+## テスト
+
 ```bash
 node --test test/smoke.test.mjs
 ```
-
-## Gemini APIキー
-Gemini APIキーは `upload.html` のpassword入力欄で必須入力する。この入力値だけをBackendへ `geminiApiKey` として送信し、Backend環境変数へフォールバックしない。
-
-Geminiの利用上限またはキー拒否エラーを受け取った場合はAPIキー欄へフォーカスし、次のキーへ入れ替えて同じ画像を再送できる。入力値はlocalStorage/sessionStorage/PostgreSQLへ保存しない。
-
-## 保存
-「PostgreSQLへ保存」押下時にFrontendが `/api/receipts/check-duplicate` で各解析結果を確認する。既存データと重複する画像は警告表示して保存せず、未登録画像だけ `/api/receipts/save` へ送信する。複数画像の途中で重複が見つかっても処理は継続する。保存APIが409 `DUPLICATE_RECEIPT` を返した場合も、その画像だけを重複として扱い後続画像の保存を続ける。保存系APIは30秒でタイムアウトし、Backendから応答がない場合も画面を無期限に待機させずエラーメッセージを表示する。
-
-
-## 解析時保存防止
-- 「解析」は `POST /api/receipts/analyze` のみを使用し、PostgreSQLへのINSERT/CREATE TABLEを行わない。
-- 旧 `POST /api/receipts` の解析＋保存エンドポイントは廃止し、解析操作から保存処理へ到達するBackend経路を削除した。
-- PostgreSQLへの追加は「PostgreSQLへ保存」押下時の `POST /api/receipts/save` のみに限定する。
-- 保存時は `POST /api/receipts/check-duplicate` で各解析結果を確認し、重複分だけ除外して未登録分を保存する。

@@ -1,28 +1,42 @@
-# レシート解析システム - No01(1) 実装
+# レシート解析システム
 
-添付 `prompt_No01(1).md` を基準に、要件定義・設計・実装・テストをまとめた成果物です。
+レシート画像をGemini APIで解析し、抽出したテキストをPostgreSQLへ保存するWebアプリケーションです。
 
-## ディレクトリ
-- `reFront/`: GitHub Pages向け HTML/CSS/JavaScript
-- `reBack/`: Render向け Spring Boot / Java 21 Backend
-- `reBack/render.yml`: Render Blueprint例
-- `docs/01_requirements.md`: 要件定義
-- `docs/02_design.md`: 設計
-- `docs/03_test_plan_and_results.md`: テスト計画・結果
-- `test_evidence/`: 実行済みテストのログ
+## 構成
+
+- `reFront/`: GitHub Pagesで公開するフロントエンド（HTML / CSS / JavaScript）
+- `reBack/`: Spring Boot 3・Java 21で構築したバックエンド
+- `docs/`: 要件定義、設計、テスト計画・結果
+- `test_evidence/`: 実行済みテストの記録
+
+フロントエンドはGitHub Pages、バックエンドはRender、データベースはPostgreSQLでの運用を想定しています。
+
+## 主な機能
+
+1. `upload.html` でGemini APIキーとJPEG / PNG画像、または画像を含むZIPファイルを選択します。
+2. 「解析」で画像を1枚ずつ解析し、抽出テキストを画面に表示します。最大5枚まで処理できます。
+3. 解析時には画像のSHA-256を重複チェック用に登録しますが、レシート本文は保存しません。
+4. 「PostgreSQLへ保存」を押すと、未登録の解析結果だけを保存します。
+5. 保存済み画像は警告として表示し、同じ画像の二重登録を防止します。
 
 ## Gemini APIキーの扱い
-Gemini APIキーは **`reFront/upload.html` の入力欄から入力した値だけ** を使用する。
-BackendにGemini APIキーの既定値は持たせず、Renderやローカル環境にもGemini APIキー用の環境変数を定義しない。
 
-Frontendは入力されたAPIキーを `multipart/form-data` の `geminiApiKey` としてBackendへ送信する。Backendは受信したキーをそのリクエストのGemini API呼び出しだけに使用し、DB・ログ・レスポンスへ保存/出力しない。FrontendもlocalStorage/sessionStorageへ保存しない。
+APIキーは画面の入力欄からリクエストごとに入力してください。環境変数、ソースコード、localStorage、sessionStorage、データベースには保存しません。バックエンドも受信したキーを、そのリクエストのGemini API呼び出しだけに使用します。
 
-無料枠の上限に達した場合は、画面のAPIキー欄を次のキーへ入れ替え、選択済みのレシート画像をそのまま再実行する。キー本数はコードへ固定しない。
+Geminiの利用上限に達した場合やキーが無効な場合は、画面上でキーを入れ替えて同じ画像を再解析できます。
 
-## ローカル起動
+## ローカル環境での起動
 
-### 1. PostgreSQL
-`receipt_db` を作成し、DB接続情報とFrontend Originを環境変数へ設定する。
+### 前提
+
+- Java 21
+- Maven
+- PostgreSQL
+- Node.js（フロントエンドのテストを実行する場合）
+
+### 1. PostgreSQLの設定
+
+`receipt_db` データベースを作成し、必要に応じて次の環境変数を設定します。
 
 ```bash
 export DB_HOST=localhost
@@ -33,67 +47,63 @@ export DB_PASSWORD='your_password'
 export APP_FRONTEND_ORIGIN='http://localhost:5051'
 ```
 
-Gemini APIキーの環境変数は設定しない。
+Gemini APIキー用の環境変数は設定しません。
 
-### 2. Backend
+### 2. バックエンドの起動
+
 ```bash
 cd reBack
 mvn spring-boot:run
 ```
 
-Health Check:
+標準ポートは `8081` です。ヘルスチェックは次のURLで確認できます。
+
 ```bash
 curl http://localhost:8081/api/health
 ```
 
-API確認では `geminiApiKey` が必須:
-```bash
-curl -X POST http://localhost:8081/api/receipts \
-  -F 'file=@/path/to/receipt.jpg' \
-  -F 'geminiApiKey=YOUR_GEMINI_API_KEY'
-```
+### 3. フロントエンドの起動
 
-### 3. Frontend
-別ターミナルで:
+別のターミナルで実行します。
+
 ```bash
 cd reFront
 python3 -m http.server 5051
 ```
 
-ブラウザで `http://localhost:5051` を開き、Gemini APIキーとレシート画像を入力する。
+ブラウザで `http://localhost:5051` を開き、APIキーとレシート画像を入力してください。
 
-## GitHub Pages
-`reFront` の内容をGitHub Pagesへ公開する。Frontendは本番環境で `https://receipt-analysis-b8po.onrender.com`、ローカル環境で `http://localhost:8081` を使用する。
+## APIの概要
 
-APIキーそのものは `upload.html` や `config.js` へ書き込まず、Web画面のpassword入力欄から都度入力する。
+- `GET /api/health`: ヘルスチェック
+- `GET /api/receipts`: 保存済みレシートの一覧取得
+- `GET /api/receipts/{tableName}`: レシート詳細の取得
+- `POST /api/receipts/analyze`: 画像を解析し、テキストとSHA-256を返す
+- `POST /api/receipts/save`: 解析済みテキストをPostgreSQLへ保存
+- `DELETE /api/receipts/{tableName}`: レシートと重複チェック情報を削除
 
-## Render
-Blueprintファイルは **`reBack/render.yml`** に配置する。RenderでBlueprintを作成するときは Blueprint Path に `reBack/render.yml` を指定する。
-Render側でGemini APIキーの環境変数は定義しない。
+`/api/receipts/analyze` は `multipart/form-data` の `file` と `geminiApiKey` を受け取ります。解析時にレシート本文のテーブルは作成されません。保存処理は `/api/receipts/save` を呼び出したときだけ実行されます。
 
-Blueprintで使用する環境変数は次の用途に限定する。
-- `APP_FRONTEND_ORIGIN`
-- Render PostgreSQLから供給される `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD`
+## テスト
 
-GeminiモデルはBackend設定ファイルで `gemini-3.5-flash-lite` に固定している。
+バックエンド:
 
-## Geminiモデル
-- 採用モデル: `gemini-3.5-flash-lite`
-- 画像入力とStructured Outputを使用してレシート文字列をJSONで取得する。
-- Geminiモデル名およびAPIキーにGemini専用環境変数は使用しない。
-- 将来モデルを変更する場合はBackend設定/実装と互換性テストを更新する。
+```bash
+cd reBack
+mvn test
+```
 
-## 重複レシートの扱い
-`reFront/upload.html` の「解析」ボタンでは最大5枚を順番に解析し、抽出テキストと画像SHA-256を取得する。SHA-256はPostgreSQLへ重複チェックキーとして保存し、レシート本文は「PostgreSQLへ保存」ボタン押下時に保存する。
+フロントエンド:
 
-保存時は画像SHA-256をキーに重複確認する。同じ画像が登録済みならその画像だけを警告表示して保存せず、未登録画像だけを保存する。保存API自身も409 `DUPLICATE_RECEIPT_IMAGE` で二重登録を防止する。たとえば5枚中2・3枚目が重複なら、2・3枚目は保存せず、1・4・5枚目だけを保存する。
+```bash
+cd reFront
+node --test test/smoke.test.mjs
+```
 
-## 重要な実装仕様
-添付仕様に従い、レシート1枚ごとに新しいPostgreSQLテーブルを作る。テーブル名はBackendがUUIDから生成し、ユーザー入力やGemini出力をDDL識別子へ使用しない。
+## デプロイ
 
+- フロントエンド: `reFront/` をGitHub Pagesへ公開
+- バックエンド: `reBack/` をRenderへデプロイ
+- Render Blueprint: `reBack/render.yml`
 
-## 解析時保存防止
-- 「解析」は `POST /api/receipts/analyze` で画像バイト列のSHA-256を計算し、`receipt_image_hash_registry` に重複チェックキーとして登録する。レシート本文のINSERT/CREATE TABLEは行わない。
-- 旧 `POST /api/receipts` の解析＋保存エンドポイントは廃止し、解析操作から保存処理へ到達するBackend経路を削除した。
-- PostgreSQLへのレシート本文の追加は「PostgreSQLへ保存」押下時の `POST /api/receipts/save` のみに限定する。保存APIは解析レスポンスのSHA-256を受け取り、ハッシュ予約行へレシートテーブルを紐付ける。
-- 保存時は解析レスポンスのSHA-256を `POST /api/receipts/save` へ渡し、ハッシュをキーに重複分だけ除外して未登録分を保存する。
+RenderではDB接続情報と `APP_FRONTEND_ORIGIN` を環境変数に設定してください。Gemini APIキーは環境変数として設定しません。

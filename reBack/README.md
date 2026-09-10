@@ -1,39 +1,71 @@
 # reBack
 
-Java 21 + Spring Boot + PostgreSQL + Gemini APIで構成したBackend。
+Java 21、Spring Boot、PostgreSQL、Gemini APIで構成したレシート解析システムのバックエンドです。
 
-## Required environment variables
-Gemini APIキー用の環境変数は定義しない。Backend運用に必要な環境変数はDB接続/CORS用のみ。
+## 必要な環境
 
-- `DB_HOST`
-- `DB_PORT`
-- `DB_NAME`
-- `DB_USER`
-- `DB_PASSWORD`
-- `APP_FRONTEND_ORIGIN`
+- Java 21
+- Maven
+- PostgreSQL
 
-Geminiモデルは `src/main/resources/application.yml` で `gemini-3.5-flash-lite` に固定する。
+## 環境変数
 
-## Gemini APIキー
-`POST /api/receipts/analyze` のmultipart項目 `geminiApiKey` は必須。
-Frontendの `reFront/upload.html` で利用者が入力した値を、そのリクエストのGemini呼び出しだけに使用する。
-Backend既定キーやGemini APIキー環境変数へのフォールバックは行わない。
+次の環境変数を設定します。
 
-キーはDBへ保存せず、レスポンスにも含めず、ログにも出力しない。Geminiが429/RESOURCE_EXHAUSTEDを返した場合はHTTP 429 / `GEMINI_QUOTA_EXCEEDED`、401/403なら `GEMINI_API_KEY_REJECTED` を返す。
+| 環境変数 | 用途 |
+| --- | --- |
+| `DB_HOST` | PostgreSQLのホスト名 |
+| `DB_PORT` | PostgreSQLのポート番号 |
+| `DB_NAME` | データベース名 |
+| `DB_USER` | データベースユーザー名 |
+| `DB_PASSWORD` | データベースパスワード |
+| `APP_FRONTEND_ORIGIN` | フロントエンドのOrigin（CORS設定） |
 
-## Render Blueprint
-`render.yml` はこの `reBack` ディレクトリ直下に配置する。Render DashboardのBlueprint Pathには `reBack/render.yml` を指定する。
-Gemini APIキー関連のenvVarsは定義しない。
+Gemini APIキー用の環境変数は使用しません。APIキーはフロントエンドからリクエスト単位で受け取ります。
 
-## Test
+## 起動
+
+```bash
+mvn spring-boot:run
+```
+
+標準ポートは `8081` です。`PORT` 環境変数で変更できます。
+
+ヘルスチェック:
+
+```bash
+curl http://localhost:8081/api/health
+```
+
+## API
+
+- `GET /api/health`: ヘルスチェック
+- `GET /api/receipts`: 保存済みレシートの一覧取得
+- `GET /api/receipts/{tableName}`: レシート詳細の取得
+- `POST /api/receipts/analyze`: 画像を解析し、抽出テキストとSHA-256を返す
+- `POST /api/receipts/save`: 解析済みレシートを保存
+- `DELETE /api/receipts/{tableName}`: レシートと重複チェック情報を削除
+
+`POST /api/receipts/analyze` は `multipart/form-data` の `file` と `geminiApiKey` を受け取ります。解析時にはレシート本文のテーブルを作成しません。本文の保存は `POST /api/receipts/save` の実行時だけ行います。
+
+## Gemini APIキーの扱い
+
+受信したAPIキーは、そのリクエストのGemini API呼び出しだけに使用します。データベース、レスポンス、ログには保存・出力しません。Geminiの利用上限やキー拒否は、適切なHTTPエラーとしてフロントエンドへ返します。
+
+## データ保存
+
+画像ごとにSHA-256を重複チェックキーとして `receipt_image_hash_registry` へ登録します。保存時には新しいレシート用テーブルを作成し、抽出したテキストを行単位で保存します。テーブル名はバックエンドがUUIDから生成し、ユーザー入力やGeminiの出力を識別子として使用しません。
+
+レシートを削除すると、紐付いたSHA-256も同じトランザクションで削除されるため、同じ画像を再登録できます。
+
+## Renderへのデプロイ
+
+Render Blueprintは `render.yml` に定義しています。Render DashboardでBlueprint Pathに `reBack/render.yml` を指定してください。
+
+Render側ではDB接続情報と `APP_FRONTEND_ORIGIN` を設定します。Gemini APIキーは環境変数として設定しません。
+
+## テスト
+
 ```bash
 mvn test
 ```
-
-## 保存
-
-`POST /api/receipts/analyze` は画像バイト列のSHA-256を計算し、`receipt_image_hash_registry` に未登録状態で確保してレスポンスの `sha256` として返す。同じSHA-256が解析済みでも、まだ保存されていなければ再解析を許可する。保存済みの場合だけ409 `DUPLICATE_RECEIPT_IMAGE` を返す。`POST /api/receipts/save` は解析レスポンスの `sha256` を受け取り、ハッシュ行に保存先テーブルを紐付ける。
-
-`POST /api/receipts/save` は画像SHA-256を重複確認キーとして使用し、既存ハッシュの場合は409 `DUPLICATE_RECEIPT_IMAGE` を返して新しいテーブルをCREATEしない。JDBCクエリは20秒でタイムアウトし、DB障害時は503 `DATABASE_ERROR` のJSONを返す。
-
-`DELETE /api/receipts/{tableName}` はレシートテーブルと紐付く画像SHA-256を同一トランザクションで削除するため、削除後は同じ画像を再登録できる。
