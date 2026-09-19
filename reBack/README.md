@@ -73,13 +73,13 @@ curl http://localhost:8081/api/health
 3. Gemini APIへ画像を送信し、印字行と構造化データを取得します。
 4. SHA-256を `receipt_image_hash_registry` に予約登録し、保存済み画像かどうかの判定に使用します。未保存の予約行（`table_name` が `NULL`）は再解析を許可します。
 5. フロントエンドで内容確認後、保存APIを実行するとレシート用テーブルを作成し、解析結果を保存します。
-6. レシート削除時は、対象の原文テーブル、`receipt_structured_summary` の対象行、対応するSHA-256登録を削除します。
+6. レシート削除時は、対象の原文テーブル、`receipt_structured_summary` と `receipt_structured_item` の関連行、対応するSHA-256登録を同一トランザクションで削除します。構造化商品テーブルにはサマリーテーブルへの外部キー（ON DELETE CASCADE）も設定します。
 
 レシート用テーブル名はバックエンドでUUIDから生成します。利用者の入力値やGemini APIの出力値をテーブル名として使用しません。
 
-## 既知の注意点
+## 削除時のデータ整合性
 
-現行の削除処理では `receipt_structured_item` の関連行を削除していません。また、当該テーブルには原文テーブルやサマリーテーブルへの外部キー制約もありません。そのため、レシート削除後に構造化商品行が残る可能性があります。運用・改修時は `doc/33_known_issues_handover.html` も参照してください。
+レシート削除処理は、原文テーブル、`receipt_structured_summary`、`receipt_structured_item`、`receipt_image_hash_registry` の関連データを同一トランザクションで削除します。`receipt_structured_item.receipt_table_name` にはサマリーテーブルへの外部キーと `ON DELETE CASCADE` を設定し、構造化保存時には既存の孤立商品行を除去してから制約を適用します。
 
 ## Gemini APIキーの扱い
 

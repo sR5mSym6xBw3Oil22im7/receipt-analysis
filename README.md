@@ -89,7 +89,7 @@ python3 -m http.server 5051
 - `GET /api/receipts/{tableName}`: レシート詳細の取得
 - `POST /api/receipts/analyze`: 画像を解析し、テキストとSHA-256を返す
 - `POST /api/receipts/save`: 解析済みテキストをPostgreSQLへ保存
-- `DELETE /api/receipts/{tableName}`: レシートと重複チェック情報を削除
+- `DELETE /api/receipts/{tableName}`: レシート本体、構造化サマリ・商品明細、重複チェック情報を削除
 
 `/api/receipts/analyze` は `multipart/form-data` の `file` と `geminiApiKey` を受け取ります。解析時にレシート本文のテーブルは作成されません。保存処理は `/api/receipts/save` を呼び出したときだけ実行されます。
 

@@ -1,7 +1,9 @@
 package com.example.receipt.repository;
 
 import com.example.receipt.dto.ReceiptDetail;
+import com.example.receipt.dto.ReceiptItemData;
 import com.example.receipt.dto.ReceiptSummary;
+import com.example.receipt.dto.ReceiptStructuredData;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,7 +37,7 @@ class ReceiptTableRepositoryTest {
         jdbcTemplate.queryForList(
                 "SELECT table_name FROM information_schema.tables WHERE LOWER(table_schema) = 'public' AND LOWER(table_name) LIKE 'receipt_%'",
                 String.class
-        ).forEach(name -> jdbcTemplate.execute("DROP TABLE " + name));
+        ).forEach(name -> jdbcTemplate.execute("DROP TABLE " + name + " CASCADE"));
     }
 
     @Test
@@ -90,5 +93,59 @@ class ReceiptTableRepositoryTest {
                 Integer.class,
                 sha256
         )).isEqualTo(1);
+    }
+
+    @Test
+    void deletingReceiptAlsoDeletesStructuredSummaryAndItems() {
+        String sha256 = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+        repository.reserveImageHash(sha256);
+        String tableName = repository.createReceiptTableAndInsert(List.of("STORE A", "TOTAL 100"), sha256);
+        repository.saveStructuredData(tableName, sha256, new ReceiptStructuredData(
+                "STORE A", null, "スーパー", null, 100L, "現金", null,
+                List.of(
+                        new ReceiptItemData("りんご", "食料品", BigDecimal.ONE, 50L, 50L),
+                        new ReceiptItemData("パン", "食料品", BigDecimal.ONE, 50L, 50L)
+                )
+        ));
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM receipt_structured_summary WHERE receipt_table_name = ?",
+                Integer.class,
+                tableName
+        )).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM receipt_structured_item WHERE receipt_table_name = ?",
+                Integer.class,
+                tableName
+        )).isEqualTo(2);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.table_constraints " +
+                        "WHERE LOWER(table_name) = 'receipt_structured_item' " +
+                        "AND LOWER(constraint_name) = 'fk_receipt_structured_item_summary'",
+                Integer.class
+        )).isEqualTo(1);
+
+        repository.deleteReceipt(tableName);
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE LOWER(table_name) = LOWER(?)",
+                Integer.class,
+                tableName
+        )).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM receipt_structured_summary WHERE receipt_table_name = ?",
+                Integer.class,
+                tableName
+        )).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM receipt_structured_item WHERE receipt_table_name = ?",
+                Integer.class,
+                tableName
+        )).isZero();
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM receipt_image_hash_registry WHERE image_sha256 = ?",
+                Integer.class,
+                sha256
+        )).isZero();
     }
 }
