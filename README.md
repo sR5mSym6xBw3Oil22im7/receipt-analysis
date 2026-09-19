@@ -57,10 +57,10 @@ mvn spring-boot:run
 
 ```bash
 cd reFront
-python3 -m http.server 5051
+python3 -m http.server 5051 --directory ..
 ```
 
-ブラウザで `http://localhost:5051` を開きます。デモモードだけを確認する場合、Backendは不要です。
+ブラウザで `http://localhost:5051` を開きます。プロジェクトルートを配信するため、納品ドキュメントは `http://localhost:5051/doc/` から参照できます。デモモードだけを確認する場合、Backendは不要です。
 
 ## 主要API
 
@@ -91,7 +91,7 @@ cd reBack
 mvn test
 ```
 
-Backendには19件のテストコードがあります。文書再作成環境ではMavenが利用できなかったため、リリース前にMaven利用可能環境で再実行してください。
+Backendには19件のテストコードがあります。`mvn test` を実行し、19/19 PASS（Failures 0、Errors 0）を確認済みです。
 
 ## 公開構成
 

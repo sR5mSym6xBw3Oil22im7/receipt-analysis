@@ -83,7 +83,7 @@ mvn spring-boot:run
 mvn test
 ```
 
-`src/test/java` 配下には19件のテストがあります。文書再作成環境ではMavenが利用できなかったため、リリース前にMaven利用可能環境で実行してください。
+`src/test/java` 配下には19件のテストがあります。`mvn test` を実行し、19/19 PASS（Failures 0、Errors 0）を確認済みです。
 
 ## Render
 

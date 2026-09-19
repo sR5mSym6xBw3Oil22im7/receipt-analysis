@@ -62,10 +62,10 @@ Gemini APIキーは `upload.html` のpassword入力欄で受け取り、解析�
 ## ローカル起動
 
 ```bash
-python3 -m http.server 5051
+python3 -m http.server 5051 --directory ..
 ```
 
-ブラウザで `http://localhost:5051` を開きます。デモだけであればBackendは不要です。
+ブラウザで `http://localhost:5051` を開きます。プロジェクトルートを配信するため、納品ドキュメントは `http://localhost:5051/doc/` から参照できます。デモだけであればBackendは不要です。
 
 ## テスト
 
