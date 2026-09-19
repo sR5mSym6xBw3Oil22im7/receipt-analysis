@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>対象範囲・対象外一覧</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：要件定義</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：要件定義</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,7 +25,10 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 対象範囲</h2><div class="table-wrap"><table><thead><tr><th>領域</th><th>対象</th></tr></thead><tbody><tr><td>入力</td><td>JPEG / PNG / JPEG・PNGのみを含むZIP</td></tr><tr><td>解析</td><td>Gemini APIによる行テキスト＋構造化データ</td></tr><tr><td>重複管理</td><td>SHA-256完全一致</td></tr><tr><td>保存</td><td>PostgreSQLの動的原文テーブル、管理・構造化テーブル</td></tr><tr><td>参照</td><td>保存済み一覧／詳細</td></tr><tr><td>削除</td><td>選択レシートの動的テーブル、summary、hash registry</td></tr><tr><td>公開</td><td>GitHub Pages + Render Web Service + Render PostgreSQL</td></tr></tbody></table></div></section><section class="chapter"><h2>2. 対象外</h2><div class="table-wrap"><table><thead><tr><th>領域</th><th>対象外内容</th></tr></thead><tbody><tr><td>アカウント</td><td>ログイン、権限、マルチテナント</td></tr><tr><td>会計</td><td>経費精算、仕訳、税計算、家計簿集計</td></tr><tr><td>画像</td><td>画像の永続保管、サムネイル管理</td></tr><tr><td>AI</td><td>人手レビュー承認フロー、学習、fine-tuning</td></tr><tr><td>検索</td><td>店舗名・日付・金額による検索／絞込みUI</td></tr><tr><td>運用</td><td>バックアップ自動化、監視通知、SLO/SLA保証</td></tr><tr><td>セキュリティ</td><td>マルウェアスキャン、WAF、レートリミット</td></tr></tbody></table></div></section><section class="chapter"><h2>3. 境界条件</h2><p>本システムは「解析結果の保存・参照を行うデモ／ポートフォリオ向けWebアプリ」であり、会計・税務上の原本管理システムとしての利用を想定しません。</p></section><div class="nav-links"><a href="05_nonfunctional_requirements.html">← 非機能要件定義書</a><a href="07_screen_list.html">画面一覧表 →</a></div>
+<section class="chapter"><h2>1. 対象範囲</h2><div class="table-wrap"><table><thead><tr><th>領域</th><th>対象</th></tr></thead><tbody><tr><td>デモ</td><td>固定サンプルレシートと固定解析結果をFrontendのみで表示</td></tr><tr><td>入力</td><td>JPEG / PNG / JPEG・PNGのみを含むZIP</td></tr><tr><td>解析</td><td>Gemini APIによる行テキスト＋構造化データ</td></tr><tr><td>重複管理</td><td>SHA-256完全一致</td></tr><tr><td>保存</td><td>PostgreSQLの動的原文テーブル、ハッシュ管理、構造化サマリー・商品明細</td></tr><tr><td>参照</td><td>保存済み一覧／詳細</td></tr><tr><td>画面導線</td><td>固定値による簡易ログインUIとReferrerベースの遷移ガード</td></tr><tr><td>削除</td><td>動的原文テーブル、summary、item、hash registry</td></tr><tr><td>公開</td><td>GitHub Pages + Render Web Service + Render PostgreSQL</td></tr></tbody></table></div></section>
+        <section class="chapter"><h2>2. 対象外</h2><div class="table-wrap"><table><thead><tr><th>領域</th><th>対象外内容</th></tr></thead><tbody><tr><td>セキュリティ</td><td>実用的なログイン認証、認可、セッション、マルチテナント</td></tr><tr><td>会計</td><td>経費精算、仕訳、税計算、家計簿集計</td></tr><tr><td>画像</td><td>画像の永続保管、サムネイル管理</td></tr><tr><td>AI</td><td>人手レビュー承認フロー、学習、fine-tuning</td></tr><tr><td>検索</td><td>店舗名・日付・金額による検索／絞込みUI</td></tr><tr><td>運用</td><td>バックアップ自動化、監視通知、SLO/SLA保証</td></tr><tr><td>防御</td><td>WAF、レートリミット、マルウェアスキャン、ZIP bomb対策</td></tr></tbody></table></div></section>
+        <section class="chapter"><h2>3. 境界条件</h2><p>本システムは「解析結果の保存・参照を行うデモ／ポートフォリオ向けWebアプリ」であり、会計・税務上の原本管理や、個人情報を保護する認証済み業務システムとしての利用は想定しません。</p></section>
+        <div class="nav-links"><a href="05_nonfunctional_requirements.html">← 非機能要件定義書</a><a href="07_screen_list.html">画面一覧表 →</a></div>
       </article>
     </main>
   </div>

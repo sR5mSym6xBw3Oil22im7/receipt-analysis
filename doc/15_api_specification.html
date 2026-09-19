@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>API仕様書</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -51,7 +51,7 @@
   {
     "tableName": "receipt_...",
     "lineCount": 3,
-    "createdAt": "2026-09-16T00:00:00+09:00"
+    "createdAt": "2026-09-19T00:00:00+09:00"
   }
 ]</code></pre></section><section class="chapter"><h2>5. GET /api/receipts/{tableName}</h2><pre><code>{
   "tableName":"receipt_...",
@@ -61,7 +61,7 @@
 }</code></pre></section><section class="chapter"><h2>6. エラー形式</h2><pre><code>{
   "code": "DUPLICATE_RECEIPT_IMAGE",
   "message": "同じレシート画像は既にPostgreSQLへ登録されています。",
-  "timestamp": "2026-09-16T00:00:00+09:00"
+  "timestamp": "2026-09-19T00:00:00+09:00"
 }</code></pre></section><section class="chapter"><h2>7. 廃止経路</h2><p>ルート <code>POST /api/receipts</code> のmultipartアップロードは実装されていません。解析＋保存を一度に行わず、<code>/analyze</code> と <code>/save</code> に分離されています。</p></section><div class="nav-links"><a href="14_backend_design.html">← バックエンド設計書</a><a href="16_database_design.html">データベース設計書 →</a></div>
       </article>
     </main>

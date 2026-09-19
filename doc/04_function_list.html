@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>機能一覧表</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：要件定義</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：要件定義</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,7 +25,26 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 機能一覧</h2><div class="table-wrap"><table><thead><tr><th>No.</th><th>区分</th><th>機能</th><th>入口</th><th>概要</th></tr></thead><tbody><tr><td>F-01</td><td>画面</td><td>メニュー</td><td>reFront/index.html</td><td>解析・一覧の2導線を表示</td></tr><tr><td>F-02</td><td>画面</td><td>レシート解析</td><td>reFront/upload.html</td><td>ファイル選択、APIキー入力、解析、保存</td></tr><tr><td>F-03</td><td>Frontend</td><td>ZIP展開</td><td>app.js</td><td>中央ディレクトリを解析しJPEG/PNGを抽出</td></tr><tr><td>F-04</td><td>Frontend</td><td>解析進捗</td><td>app.js</td><td>15秒ごとの待機メッセージ、210秒タイムアウト</td></tr><tr><td>F-05</td><td>Backend</td><td>画像検証</td><td>ReceiptUploadValidator</td><td>空・MIME・5MB上限を検証</td></tr><tr><td>F-06</td><td>Backend/AI</td><td>Gemini解析</td><td>GeminiReceiptAnalyzer</td><td>linesとstructuredDataをStructured Outputで取得</td></tr><tr><td>F-07</td><td>Backend</td><td>SHA-256予約</td><td>ReceiptService/Repository</td><td>解析成功画像の重複管理</td></tr><tr><td>F-08</td><td>Frontend</td><td>解析結果表示</td><td>app.js</td><td>各画像の原文行をpre要素で表示</td></tr><tr><td>F-09</td><td>Backend</td><td>DB保存</td><td>POST /api/receipts/save</td><td>動的テーブル＋構造化テーブルへ保存</td></tr><tr><td>F-10</td><td>画面/API</td><td>保存済み一覧</td><td>select.html / GET /api/receipts</td><td>件数・行数・作成日時を表示</td></tr><tr><td>F-11</td><td>画面/API</td><td>詳細参照</td><td>GET /api/receipts/{tableName}</td><td>原文行を行番号順に表示</td></tr><tr><td>F-12</td><td>画面/API</td><td>複数削除</td><td>DELETE /api/receipts/{tableName}</td><td>チェック済みを1件ずつ削除</td></tr><tr><td>F-13</td><td>Frontend</td><td>一覧リンク制御</td><td>index.js</td><td>0件時は保存済みレシート導線を隠す</td></tr><tr><td>F-14</td><td>Frontend</td><td>画面遷移ガード</td><td>access-guard.js</td><td>メニュー以外からupload/selectへの直アクセスをindexへ戻す</td></tr><tr><td>F-15</td><td>運用</td><td>ヘルスチェック</td><td>GET /api/health</td><td><code>{"status":"UP"}</code>を返す</td></tr></tbody></table></div></section><div class="nav-links"><a href="03_requirements_definition.html">← 要件定義書</a><a href="05_nonfunctional_requirements.html">非機能要件定義書 →</a></div>
+<section class="chapter"><h2>1. 機能一覧</h2><div class="table-wrap"><table><thead><tr><th>No.</th><th>区分</th><th>機能</th><th>入口</th><th>概要</th></tr></thead><tbody>
+<tr><td>F-01</td><td>画面</td><td>メニュー</td><td>reFront/index.html</td><td>デモ・解析・保存済みデータの3導線を表示</td></tr>
+<tr><td>F-02</td><td>Frontend</td><td>APIキー不要デモ</td><td>demo.html / demo.js</td><td>固定レシート・固定解析結果を外部通信なしで表示</td></tr>
+<tr><td>F-03</td><td>画面</td><td>レシート解析</td><td>upload.html</td><td>ファイル選択、APIキー入力、解析、保存</td></tr>
+<tr><td>F-04</td><td>Frontend</td><td>ZIP展開</td><td>app.js</td><td>Central Directoryを解析しJPEG/PNGを抽出</td></tr>
+<tr><td>F-05</td><td>Frontend</td><td>解析進捗</td><td>app.js</td><td>15秒ごとの待機メッセージ、210秒timeout</td></tr>
+<tr><td>F-06</td><td>Backend</td><td>画像検証</td><td>ReceiptUploadValidator</td><td>空・MIME・5MB上限を検証</td></tr>
+<tr><td>F-07</td><td>Backend/AI</td><td>Gemini解析</td><td>GeminiReceiptAnalyzer</td><td>linesとstructuredDataを取得</td></tr>
+<tr><td>F-08</td><td>Backend</td><td>SHA-256予約</td><td>ReceiptService / Repository</td><td>解析成功画像の重複管理</td></tr>
+<tr><td>F-09</td><td>Frontend</td><td>解析結果表示</td><td>app.js</td><td>各画像の原文行を表示</td></tr>
+<tr><td>F-10</td><td>Backend</td><td>DB保存</td><td>POST /api/receipts/save</td><td>動的原文テーブル＋構造化テーブルへ保存</td></tr>
+<tr><td>F-11</td><td>Frontend</td><td>簡易ログインUI</td><td>login.html</td><td>固定値判定後に保存済み画面へ遷移。認証・認可ではない</td></tr>
+<tr><td>F-12</td><td>画面/API</td><td>保存済み一覧</td><td>select.html / GET /api/receipts</td><td>行数・作成日時を表示</td></tr>
+<tr><td>F-13</td><td>画面/API</td><td>詳細参照</td><td>GET /api/receipts/{tableName}</td><td>原文行を行番号順に表示</td></tr>
+<tr><td>F-14</td><td>画面/API</td><td>複数削除</td><td>DELETE /api/receipts/{tableName}</td><td>チェック済みを1件ずつ削除し関連データも除去</td></tr>
+<tr><td>F-15</td><td>Frontend</td><td>一覧リンク制御</td><td>index.js</td><td>保存件数0件時は保存済み導線を隠す</td></tr>
+<tr><td>F-16</td><td>Frontend</td><td>画面遷移ガード</td><td>access-guard.js</td><td>upload/selectへの直接アクセスをindexへ戻す</td></tr>
+<tr><td>F-17</td><td>運用</td><td>ヘルスチェック</td><td>GET /api/health</td><td><code>{"status":"UP"}</code>を返す</td></tr>
+</tbody></table></div></section>
+        <div class="nav-links"><a href="03_requirements_definition.html">← 要件定義書</a><a href="05_nonfunctional_requirements.html">非機能要件定義書 →</a></div>
       </article>
     </main>
   </div>

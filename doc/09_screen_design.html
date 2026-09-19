@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>画面設計書</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,37 +25,53 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. SCR-01 メニュー</h2><pre><code>┌──────────────────────────────┐
-│ レシート解析システム           │
-│                              │
-│ [ レシートを解析 ]             │
-│  画像を解析し確認後に保存       │
-│                              │
-│ [ 保存済みレシートを見る ]      │ ← 0件時は非表示
-└──────────────────────────────┘</code></pre></section><section class="chapter"><h2>2. SCR-02 レシート解析</h2><pre><code>← メニューへ戻る
-┌──────────────────────────────┐
-│ レシート解析                   │
-│ [ファイルを選択] file.zip      │
-│ Gemini APIキー [••••••••] [消去]
-│ [解析] [PostgreSQLへ保存]      │ ← 保存は解析完了後のみ
-│ status message                │
-└──────────────────────────────┘
-┌──────────────────────────────┐
-│ 解析結果                       │
-│ レシート画像1                  │
-│ &lt;抽出行テキスト&gt;               │
-└──────────────────────────────┘</code></pre></section><section class="chapter"><h2>3. SCR-03 保存済み一覧・詳細</h2><pre><code>← メニューへ戻る
-┌──────────────────────────────┐
-│ 保存済みレシート一覧           │
-│ [チェックしたレシートを削除]   │
-│ □ receipt_xxx  10行  [参照]   │
-│ □ receipt_yyy   8行  [参照]   │
-└──────────────────────────────┘
-┌──────────────────────────────┐
-│ レシート詳細            [閉じる]
-│ 1. STORE ...                  │
-│ 2. ITEM ...                   │
-└──────────────────────────────┘</code></pre></section><section class="chapter"><h2>4. レスポンシブ方針</h2><p>共通CSSはカード型レイアウトを使用し、APIキー行や定義リストは狭幅時に1カラムへ切り替えます。操作ボタンはタッチ操作でも押しやすい余白を確保します。</p></section><div class="nav-links"><a href="08_screen_transition.html">← 画面遷移設計書</a><a href="10_screen_item_definition.html">画面項目定義書 →</a></div>
+<section class="chapter"><h2>1. SCR-01 メニュー</h2><pre><code>┌──────────────────────────────────┐
+│ レシート解析システム               │
+│ [ デモを試す / APIキー不要 ]       │
+│ [ レシートを解析 ]                 │
+│ [ 保存済みレシートを見る ]          │ ← 0件時は非表示
+└──────────────────────────────────┘</code></pre></section>
+        <section class="chapter"><h2>2. SCR-02 デモ</h2><pre><code>← メニューへ戻る
+┌──────────────────────────────────┐
+│ レシート解析 デモ / デモモード     │
+│ サンプルレシート画像               │
+│ [画像解析]                         │
+│ status                             │
+└──────────────────────────────────┘
+┌──────────────────────────────────┐
+│ 解析結果（固定データ）              │
+└──────────────────────────────────┘</code></pre></section>
+        <section class="chapter"><h2>3. SCR-03 レシート解析</h2><pre><code>← メニューへ戻る
+┌──────────────────────────────────┐
+│ [ファイルを選択] file.zip          │
+│ Gemini APIキー [••••••••] [消去]  │
+│ [解析] [PostgreSQLへ保存]          │
+│ status                             │
+└──────────────────────────────────┘
+┌──────────────────────────────────┐
+│ 解析結果                           │
+│ レシート画像1 / &lt;抽出行テキスト&gt;   │
+└──────────────────────────────────┘</code></pre></section>
+        <section class="chapter"><h2>4. SCR-04 簡易ログイン</h2><pre><code>← メニューへ戻る
+┌──────────────────────────────────┐
+│ ログイン                           │
+│ ユーザID   [              ]       │
+│ パスワード [              ]       │
+│ [ログイン]                        │
+│ status                             │
+└──────────────────────────────────┘</code></pre><div class="callout warning">固定値判定をFrontend内で行う簡易UIです。認証済みセッション、Backend照合、権限制御は行いません。</div></section>
+        <section class="chapter"><h2>5. SCR-05 保存済み一覧・詳細</h2><pre><code>← メニューへ戻る
+┌──────────────────────────────────┐
+│ 保存済みレシート一覧               │
+│ [チェックしたレシートを削除]       │
+│ □ receipt_xxx  10行  [参照]       │
+└──────────────────────────────────┘
+┌──────────────────────────────────┐
+│ レシート詳細               [閉じる]│
+│ 1. STORE ...                      │
+└──────────────────────────────────┘</code></pre></section>
+        <section class="chapter"><h2>6. レスポンシブ方針</h2><p>共通CSSはカード型レイアウトを使用し、狭幅時はAPIキー行・定義リスト・デモワークスペースを1カラムへ切り替えます。</p></section>
+        <div class="nav-links"><a href="08_screen_transition.html">← 画面遷移設計書</a><a href="10_screen_item_definition.html">画面項目定義書 →</a></div>
       </article>
     </main>
   </div>

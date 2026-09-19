@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>画面遷移設計書</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,7 +25,10 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 画面遷移</h2><div class="diagram"><div class="node">SCR-01 メニュー</div><div class="arrow">↓ 「レシートを解析」</div><div class="node">SCR-02 レシート解析<br/><span class="small">ファイル選択 → 解析 → 確認 → PostgreSQLへ保存</span></div><div class="arrow">↖ 「メニューへ戻る」</div><div class="node">SCR-01 メニュー</div><div class="arrow">↓ 保存済みデータが存在する場合「保存済みレシートを見る」</div><div class="node">SCR-03 保存済みレシート一覧<br/><span class="small">参照 → 詳細パネル / チェック → 削除</span></div><div class="arrow">↖ 「メニューへ戻る」</div></div></section><section class="chapter"><h2>2. 直接アクセス制御</h2><p><code>upload.html</code> と <code>select.html</code> は <code>document.referrer</code> が同一Originの <code>index.html</code> でない場合、<code>access-guard.js</code> によりメニューへリダイレクトします。</p><div class="callout warning">この制御はナビゲーション体験のためのガードであり、セキュリティ上の認証・認可ではありません。URL/APIへのアクセス権を保証するものではありません。</div></section><div class="nav-links"><a href="07_screen_list.html">← 画面一覧表</a><a href="09_screen_design.html">画面設計書 →</a></div>
+<section class="chapter"><h2>1. 画面遷移</h2><div class="diagram"><div class="node">SCR-01 メニュー</div><div class="arrow">↓ 「デモを試す」</div><div class="node">SCR-02 デモ<br/><span class="small">サンプルレシート → 画像解析 → 固定結果</span></div><div class="arrow">↖ メニューへ戻る</div><div class="node">SCR-01 メニュー</div><div class="arrow">↓ 「レシートを解析」</div><div class="node">SCR-03 レシート解析<br/><span class="small">ファイル選択 → 解析 → 確認 → PostgreSQLへ保存</span></div><div class="arrow">↖ メニューへ戻る</div><div class="node">SCR-01 メニュー</div><div class="arrow">↓ 保存済みデータがある場合「保存済みレシートを見る」</div><div class="node">SCR-04 簡易ログイン</div><div class="arrow">↓ 固定値一致</div><div class="node">SCR-05 保存済みレシート一覧<br/><span class="small">参照 → 詳細 / チェック → 削除</span></div><div class="arrow">↖ メニューへ戻る</div></div></section>
+        <section class="chapter"><h2>2. 直接アクセス制御</h2><p><code>upload.html</code> と <code>select.html</code> は、同一Originのメニュー画面経由でない場合に <code>access-guard.js</code> でメニューへ戻します。<code>login.html</code> にも同様のReferrer確認がインラインスクリプトとして実装されています。</p><div class="callout warning">これらはナビゲーション体験のための制御です。固定値判定やReferrerはセキュリティ上の認証・認可を提供しません。</div></section>
+        <section class="chapter"><h2>3. 簡易ログインから一覧への遷移</h2><p><code>login.html</code> は固定値が一致すると履歴上のURLを <code>index.html</code> に置き換えた後、<code>select.html</code> へ遷移します。これは <code>select.html</code> の既存アクセスガードと整合させるための画面制御です。</p></section>
+        <div class="nav-links"><a href="07_screen_list.html">← 画面一覧表</a><a href="09_screen_design.html">画面設計書 →</a></div>
       </article>
     </main>
   </div>

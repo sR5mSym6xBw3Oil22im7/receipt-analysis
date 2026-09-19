@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>システム構成設計書</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,23 +25,26 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 論理構成</h2><pre><code>Browser
-  |  HTTPS
-  v
-GitHub Pages / reFront
-  |  REST API
-  |  multipart(file + geminiApiKey) / JSON(lines + sha256 + structuredData)
-  v
-Render Web Service / reBack (Spring Boot)
-  |                    |
-  | HTTPS              | JDBC
-  v                    v
-Gemini API        Render PostgreSQL
-  |                    |
-  +-- lines            +-- receipt_&lt;uuid32&gt;
-  +-- structuredData   +-- receipt_image_hash_registry
-                       +-- receipt_structured_summary
-                       +-- receipt_structured_item</code></pre></section><section class="chapter"><h2>2. 配置責務</h2><div class="table-wrap"><table><thead><tr><th>コンポーネント</th><th>責務</th><th>状態</th></tr></thead><tbody><tr><td>Browser</td><td>ファイル選択、ZIP展開、APIキー保持、画面描画</td><td>一時状態のみ</td></tr><tr><td>GitHub Pages</td><td>静的ファイル配信</td><td>サーバー処理なし</td></tr><tr><td>Render Web Service</td><td>検証、SHA計算、Gemini呼出、DB操作</td><td>ステートレスAPI</td></tr><tr><td>Gemini API</td><td>画像解析</td><td>外部サービス</td></tr><tr><td>Render PostgreSQL</td><td>解析結果・重複情報の永続化</td><td>永続状態</td></tr></tbody></table></div></section><section class="chapter"><h2>3. 信頼境界</h2><p>秘密情報となるGemini APIキーはBrowserからBackendへHTTPSで送信され、BackendからGeminiへ転送されます。PostgreSQLへは保存しません。DB資格情報はRender環境変数からBackendだけが使用します。</p></section><div class="nav-links"><a href="11_input_validation.html">← 入力チェック仕様書</a><a href="13_frontend_design.html">フロントエンド設計書 →</a></div>
+        <section class="chapter"><h2>1. 論理構成</h2><pre><code>Browser / GitHub Pages / reFront
+  |-- demo.html + demo.js
+  |     +-- 固定サンプルのみで完結（Backend / Gemini / DBへ接続しない）
+  |
+  |-- upload.html + app.js
+  |     |  REST API
+  |     |  multipart(file + geminiApiKey) / JSON(lines + sha256 + structuredData)
+  |     v
+  |   Render Web Service / reBack (Spring Boot)
+  |     |                    |
+  |     | HTTPS              | JDBC
+  |     v                    v
+  |   Gemini API        Render PostgreSQL
+  |                          +-- receipt_&lt;uuid32&gt;
+  |                          +-- receipt_image_hash_registry
+  |                          +-- receipt_structured_summary
+  |                          +-- receipt_structured_item
+  |
+  +-- login.html --&gt; select.html
+        Frontend固定値による簡易導線（Backend認証ではない）</code></pre></section><section class="chapter"><h2>2. 配置責務</h2><div class="table-wrap"><table><thead><tr><th>コンポーネント</th><th>責務</th><th>状態</th></tr></thead><tbody><tr><td>Browser</td><td>画面描画、デモ表示、ファイル選択、ZIP展開、APIキー保持、簡易ログインUI</td><td>一時状態のみ</td></tr><tr><td>GitHub Pages</td><td>静的ファイル配信</td><td>サーバー処理なし</td></tr><tr><td>Render Web Service</td><td>検証、SHA計算、Gemini呼出、DB操作</td><td>ステートレスAPI</td></tr><tr><td>Gemini API</td><td>画像解析</td><td>外部サービス</td></tr><tr><td>Render PostgreSQL</td><td>解析結果・重複情報の永続化</td><td>永続状態</td></tr></tbody></table></div></section><section class="chapter"><h2>3. 信頼境界</h2><p>秘密情報となるGemini APIキーはBrowserからBackendへHTTPSで送信され、BackendからGeminiへ転送されます。PostgreSQLへは保存しません。DB資格情報はRender環境変数からBackendだけが使用します。</p></section><div class="nav-links"><a href="11_input_validation.html">← 入力チェック仕様書</a><a href="13_frontend_design.html">フロントエンド設計書 →</a></div>
       </article>
     </main>
   </div>

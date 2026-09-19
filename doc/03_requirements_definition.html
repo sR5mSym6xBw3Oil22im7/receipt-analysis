@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>要件定義書</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：要件定義</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：要件定義</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,7 +25,29 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 目的</h2><p>紙・画像レシートの内容を手入力する負担を減らし、AI解析結果を確認してからPostgreSQLへ保存できる仕組みを提供します。解析操作と保存操作を分離し、意図しない本文保存を避けます。</p></section><section class="chapter"><h2>2. 利用者と前提</h2><ul><li>利用者はPCまたはスマートフォンのモダンブラウザを使用する</li><li>Gemini APIキーは利用者または運用者が別途用意する</li><li>FrontendはGitHub Pages、BackendとPostgreSQLはRenderでの公開を想定する</li><li>本システムは個人向け／デモ用途を想定し、認証・権限管理は行わない</li></ul></section><section class="chapter"><h2>3. 機能要件</h2><div class="table-wrap"><table><thead><tr><th>ID</th><th>要件</th><th>受入条件</th><th>状態</th></tr></thead><tbody><tr><td>FR-01</td><td>メニュー表示</td><td>解析画面と保存済みレシート画面への導線を提供する</td><td>実装済</td></tr><tr><td>FR-02</td><td>画像入力</td><td>JPEG / PNGを1ファイル選択できる</td><td>実装済</td></tr><tr><td>FR-03</td><td>ZIP入力</td><td>JPEG / PNGを含むZIPをブラウザで展開し、画像ごとに処理する</td><td>実装済</td></tr><tr><td>FR-04</td><td>APIキー入力</td><td>Gemini APIキーをpassword型入力欄で必須入力する</td><td>実装済</td></tr><tr><td>FR-05</td><td>解析</td><td>画像をGeminiへ送り、印字文字を行配列として取得する</td><td>実装済</td></tr><tr><td>FR-06</td><td>構造化解析</td><td>店舗・日時・金額・商品等の構造化情報を同時取得する</td><td>実装済</td></tr><tr><td>FR-07</td><td>ハッシュ計算</td><td>受信画像のSHA-256をバックエンドで算出する</td><td>実装済</td></tr><tr><td>FR-08</td><td>重複予約</td><td>解析成功後、未保存ハッシュを管理テーブルへ予約する</td><td>実装済</td></tr><tr><td>FR-09</td><td>解析結果確認</td><td>保存前に行テキストを画面表示する</td><td>実装済</td></tr><tr><td>FR-10</td><td>保存</td><td>利用者操作により原文行と構造化データをPostgreSQLへ保存する</td><td>実装済</td></tr><tr><td>FR-11</td><td>重複防止</td><td>保存済みハッシュは重複として409で拒否する</td><td>実装済</td></tr><tr><td>FR-12</td><td>一覧</td><td>保存済みレシートのテーブル名・行数・日時を一覧表示する</td><td>実装済</td></tr><tr><td>FR-13</td><td>詳細</td><td>保存済み原文行を行番号順に表示する</td><td>実装済</td></tr><tr><td>FR-14</td><td>削除</td><td>選択レシートを削除し、再登録可能な状態にする</td><td>一部注意あり</td></tr><tr><td>FR-15</td><td>ヘルスチェック</td><td>API稼働確認用 <code>/api/health</code> を提供する</td><td>実装済</td></tr></tbody></table></div></section><section class="chapter"><h2>4. ファイル要件</h2><div class="table-wrap"><table><thead><tr><th>項目</th><th>要件</th></tr></thead><tbody><tr><td>直接画像</td><td>JPEGまたはPNG。1回の選択で1ファイル</td></tr><tr><td>ZIP</td><td>内部の通常ファイルがJPEG / PNGのみであること。ディレクトリは無視</td></tr><tr><td>画像サイズ</td><td>バックエンド1画像あたり5MB以下</td></tr><tr><td>ZIP圧縮方式</td><td>Store(0) または Deflate(8)</td></tr><tr><td>ZIP暗号化</td><td>非対応。暗号化エントリを検出した場合は中断</td></tr><tr><td>ZIP内画像数</td><td>現行実装では固定上限なし</td></tr></tbody></table></div></section><section class="chapter"><h2>5. AI解析要件</h2><ul><li>モデルは設定値 <code>gemini-3.5-flash-lite</code> を使用する</li><li>原文は上から下へ1行ずつ <code>lines</code> 配列として返す</li><li>存在しない文字や値を推測で補わないようプロンプトで指示する</li><li>店舗カテゴリは「スーパー／コンビニ／ドラッグストア／飲食店／その他」</li><li>商品カテゴリは「食料品／日用品／飲食／交通・移動／その他」</li><li>構造化データの読めない値はnullを許容する</li></ul></section><section class="chapter"><h2>6. 保存・重複要件</h2><ul><li>解析成功後にSHA-256を <code>receipt_image_hash_registry</code> へ予約する</li><li>未保存状態（table_nameがNULL）の同一SHA-256は再解析を許容する</li><li>保存時に予約行へ新規レシートテーブル名を紐付ける</li><li>保存済みSHA-256は同一画像として409で拒否する</li><li>レシート本文は「PostgreSQLへ保存」操作まで作成・INSERTしない</li></ul></section><section class="chapter"><h2>7. 対象外</h2><ul><li>ユーザー認証・ロール管理</li><li>レシート画像の永続保存</li><li>支出ダッシュボード／集計画面</li><li>構造化データの編集UI</li><li>画像内容が同じでもバイト列が異なる画像を同一視する類似判定</li><li>ウイルススキャン／ZIP bomb対策のサーバー側強制</li></ul></section><div class="nav-links"><a href="02_technology_selection.html">← 技術選定書</a><a href="04_function_list.html">機能一覧表 →</a></div>
+<section class="chapter"><h2>1. 目的</h2><p>紙・画像レシートの内容を手入力する負担を減らし、AI解析結果を確認してからPostgreSQLへ保存できる仕組みを提供します。ポートフォリオ閲覧者向けには、APIキーなしで操作感を確認できるデモモードも提供します。</p></section>
+        <section class="chapter"><h2>2. 利用者と前提</h2><ul><li>利用者はPCまたはスマートフォンのモダンブラウザを使用する</li><li>実Gemini解析を行う場合は利用者がGemini APIキーを用意する</li><li>デモモードはAPIキー不要で、Frontendだけで完結する</li><li>FrontendはGitHub Pages、BackendとPostgreSQLはRenderでの公開を想定する</li><li>保存済み画面前に簡易ログインUIがあるが、認証・認可は対象外とする</li></ul></section>
+        <section class="chapter"><h2>3. 機能要件</h2><div class="table-wrap"><table><thead><tr><th>ID</th><th>要件</th><th>受入条件</th><th>状態</th></tr></thead><tbody>
+<tr><td>FR-01</td><td>メニュー表示</td><td>デモ、解析、保存済みレシートへの導線を提供する</td><td>実装済</td></tr>
+<tr><td>FR-02</td><td>デモ</td><td>APIキー・外部通信なしでサンプルレシートと固定解析結果を表示する</td><td>実装済</td></tr>
+<tr><td>FR-03</td><td>画像入力</td><td>JPEG / PNGを1ファイル選択できる</td><td>実装済</td></tr>
+<tr><td>FR-04</td><td>ZIP入力</td><td>JPEG / PNGを含むZIPをブラウザで展開し画像ごとに処理する</td><td>実装済</td></tr>
+<tr><td>FR-05</td><td>APIキー入力</td><td>Gemini APIキーをpassword型入力欄で必須入力する</td><td>実装済</td></tr>
+<tr><td>FR-06</td><td>解析</td><td>画像をGeminiへ送り印字文字と構造化情報を取得する</td><td>実装済</td></tr>
+<tr><td>FR-07</td><td>ハッシュ計算・予約</td><td>SHA-256を算出し重複判定用に予約する</td><td>実装済</td></tr>
+<tr><td>FR-08</td><td>解析結果確認</td><td>保存前に行テキストを画面表示する</td><td>実装済</td></tr>
+<tr><td>FR-09</td><td>保存</td><td>明示操作で原文行と構造化データをPostgreSQLへ保存する</td><td>実装済</td></tr>
+<tr><td>FR-10</td><td>重複防止</td><td>保存済みSHA-256は409で拒否する</td><td>実装済</td></tr>
+<tr><td>FR-11</td><td>簡易ログインUI</td><td>保存済み画面へ進む前に固定値判定の入力画面を表示する</td><td>実装済（認証ではない）</td></tr>
+<tr><td>FR-12</td><td>一覧・詳細</td><td>保存済みレシートの一覧と原文行を表示する</td><td>実装済</td></tr>
+<tr><td>FR-13</td><td>削除</td><td>選択レシートの原文、構造化サマリー、商品明細、ハッシュ情報を削除する</td><td>実装済</td></tr>
+<tr><td>FR-14</td><td>ヘルスチェック</td><td><code>/api/health</code> を提供する</td><td>実装済</td></tr>
+</tbody></table></div></section>
+        <section class="chapter"><h2>4. ファイル要件</h2><div class="table-wrap"><table><thead><tr><th>項目</th><th>要件</th></tr></thead><tbody><tr><td>直接画像</td><td>JPEGまたはPNG。1回の選択で1ファイル</td></tr><tr><td>ZIP</td><td>通常ファイルはJPEG / PNGのみ。ディレクトリは無視</td></tr><tr><td>画像サイズ</td><td>Backendで1画像あたり5MB以下</td></tr><tr><td>ZIP圧縮方式</td><td>Store(0) または Deflate(8)</td></tr><tr><td>ZIP暗号化</td><td>非対応</td></tr><tr><td>ZIP内画像数</td><td>現行実装では固定上限なし</td></tr></tbody></table></div></section>
+        <section class="chapter"><h2>5. AI解析要件</h2><ul><li>モデルは <code>gemini-3.5-flash-lite</code></li><li>原文は上から下へ1行ずつ <code>lines</code> 配列として返す</li><li>店舗・日時・合計金額・支払方法・商品等をstructuredDataとして返す</li><li>読めない値はnullを許容し、存在しない文字や値を推測で補わない</li></ul></section>
+        <section class="chapter"><h2>6. 保存・重複・削除要件</h2><ul><li>解析成功後にSHA-256を <code>receipt_image_hash_registry</code> へ予約する</li><li>未保存状態の同一SHA-256は再解析を許容する</li><li>保存時に予約行へ動的レシートテーブル名を割り当てる</li><li>保存済みSHA-256は409で拒否する</li><li>レシート削除時は関連商品明細・サマリー・ハッシュも同一トランザクションで削除する</li></ul></section>
+        <section class="chapter"><h2>7. 対象外</h2><ul><li>実用的なユーザー認証・ロール管理・セッション管理</li><li>レシート画像の永続保存</li><li>支出ダッシュボード／集計画面</li><li>構造化データの編集UI</li><li>類似画像判定</li><li>ZIP bomb対策の上限管理</li></ul></section>
+        <div class="nav-links"><a href="02_technology_selection.html">← 技術選定書</a><a href="04_function_list.html">機能一覧表 →</a></div>
       </article>
     </main>
   </div>

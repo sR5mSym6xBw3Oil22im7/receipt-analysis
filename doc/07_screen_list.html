@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>画面一覧表</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,7 +25,16 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 画面一覧</h2><div class="table-wrap"><table><thead><tr><th>画面ID</th><th>画面名</th><th>ファイル</th><th>主機能</th><th>備考</th></tr></thead><tbody><tr><td>SCR-01</td><td>メニュー</td><td>reFront/index.html</td><td>解析画面／保存済み一覧への導線</td><td>保存件数0件時は一覧導線を非表示</td></tr><tr><td>SCR-02</td><td>レシート解析</td><td>reFront/upload.html</td><td>画像/ZIP、APIキー、解析、保存</td><td>メニュー経由アクセスを前提</td></tr><tr><td>SCR-03</td><td>保存済みレシート一覧・詳細</td><td>reFront/select.html</td><td>一覧、詳細、複数選択削除</td><td>詳細は同一画面内パネル</td></tr><tr><td>RED-01</td><td>ルートリダイレクト</td><td>/index.html</td><td>reFront/index.htmlへ転送</td><td>ユーザー画面ではない</td></tr><tr><td>RED-02</td><td>Backendルートリダイレクト</td><td>reBack/index.html</td><td>../reFront/index.htmlへ転送</td><td>開発補助</td></tr></tbody></table></div></section><div class="nav-links"><a href="06_scope.html">← 対象範囲・対象外一覧</a><a href="08_screen_transition.html">画面遷移設計書 →</a></div>
+<section class="chapter"><h2>1. 画面一覧</h2><div class="table-wrap"><table><thead><tr><th>画面ID</th><th>画面名</th><th>ファイル</th><th>主機能</th><th>備考</th></tr></thead><tbody>
+<tr><td>SCR-01</td><td>メニュー</td><td>reFront/index.html</td><td>デモ／解析／保存済みレシートへの入口</td><td>保存件数0件時は保存済み導線を非表示</td></tr>
+<tr><td>SCR-02</td><td>デモ</td><td>reFront/demo.html</td><td>サンプル画像、固定解析結果表示</td><td>APIキー・Backend不要</td></tr>
+<tr><td>SCR-03</td><td>レシート解析</td><td>reFront/upload.html</td><td>画像/ZIP、APIキー、解析、保存</td><td>メニュー経由アクセスを前提</td></tr>
+<tr><td>SCR-04</td><td>簡易ログイン</td><td>reFront/login.html</td><td>固定ユーザーID／パスワード判定</td><td>認証・認可ではない</td></tr>
+<tr><td>SCR-05</td><td>保存済みレシート一覧・詳細</td><td>reFront/select.html</td><td>一覧、詳細、複数選択削除</td><td>詳細は同一画面内パネル</td></tr>
+<tr><td>RED-01</td><td>ルートリダイレクト</td><td>/index.html</td><td>reFront/index.htmlへ転送</td><td>ユーザー画面ではない</td></tr>
+<tr><td>RED-02</td><td>Backendルートリダイレクト</td><td>reBack/index.html</td><td>../reFront/index.htmlへ転送</td><td>開発補助</td></tr>
+</tbody></table></div></section>
+        <div class="nav-links"><a href="06_scope.html">← 対象範囲・対象外一覧</a><a href="08_screen_transition.html">画面遷移設計書 →</a></div>
       </article>
     </main>
   </div>

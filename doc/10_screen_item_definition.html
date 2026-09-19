@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>画面項目定義書</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：基本設計</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,7 +25,24 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 主要画面項目</h2><div class="table-wrap"><table><thead><tr><th>画面</th><th>項目ID</th><th>項目名</th><th>型／要素</th><th>必須</th><th>仕様</th></tr></thead><tbody><tr><td>SCR-01</td><td>select-link</td><td>保存済みレシートを見る</td><td>a</td><td>-</td><td>API一覧が0件ならhidden</td></tr><tr><td>SCR-02</td><td>receipt-file-1</td><td>レシートファイル</td><td>input type=file</td><td>○</td><td>accept=image/jpeg,image/png,.zip,application/zip</td></tr><tr><td>SCR-02</td><td>gemini-api-key</td><td>Gemini APIキー</td><td>input type=password</td><td>○</td><td>autocomplete=off、maxlength=512</td></tr><tr><td>SCR-02</td><td>clear-api-key</td><td>入力を消去</td><td>button</td><td>-</td><td>キー入力を空にしてfocus</td></tr><tr><td>SCR-02</td><td>submit-button</td><td>解析</td><td>button</td><td>-</td><td>処理中はdisabled／「解析中...」</td></tr><tr><td>SCR-02</td><td>save-button</td><td>PostgreSQLへ保存</td><td>button</td><td>-</td><td>解析済み未保存データがある時だけ表示</td></tr><tr><td>SCR-02</td><td>status</td><td>状態メッセージ</td><td>p</td><td>-</td><td>aria-live=polite</td></tr><tr><td>SCR-02</td><td>receipt-results</td><td>解析結果</td><td>div</td><td>-</td><td>画像単位にpreで原文行を表示</td></tr><tr><td>SCR-03</td><td>delete-selected</td><td>チェックしたレシートを削除</td><td>button</td><td>-</td><td>0件時hidden、未選択時disabled</td></tr><tr><td>SCR-03</td><td>receipt-list</td><td>一覧</td><td>div</td><td>-</td><td>チェックボックス、名称、行数、日時、参照ボタン</td></tr><tr><td>SCR-03</td><td>detail-panel</td><td>詳細パネル</td><td>section</td><td>-</td><td>参照時表示</td></tr><tr><td>SCR-03</td><td>close-detail</td><td>閉じる</td><td>button</td><td>-</td><td>詳細パネルをhidden</td></tr></tbody></table></div></section><div class="nav-links"><a href="09_screen_design.html">← 画面設計書</a><a href="11_input_validation.html">入力チェック仕様書 →</a></div>
+<section class="chapter"><h2>1. 主要画面項目</h2><div class="table-wrap"><table><thead><tr><th>画面</th><th>項目ID</th><th>項目名</th><th>型／要素</th><th>必須</th><th>仕様</th></tr></thead><tbody>
+<tr><td>SCR-01</td><td>-</td><td>デモを試す</td><td>a</td><td>-</td><td><code>demo.html</code> へ遷移</td></tr>
+<tr><td>SCR-01</td><td>select-link</td><td>保存済みレシートを見る</td><td>a</td><td>-</td><td>一覧0件ならhidden、遷移先は <code>login.html</code></td></tr>
+<tr><td>SCR-02</td><td>demo-analyze-button</td><td>画像解析</td><td>button</td><td>-</td><td>固定データの解析演出を開始</td></tr>
+<tr><td>SCR-02</td><td>demo-status</td><td>デモ状態</td><td>p</td><td>-</td><td>aria-live=polite</td></tr>
+<tr><td>SCR-02</td><td>demo-result-card</td><td>デモ解析結果</td><td>section</td><td>-</td><td>完了後に表示</td></tr>
+<tr><td>SCR-03</td><td>receipt-file-1</td><td>レシートファイル</td><td>input type=file</td><td>○</td><td>JPEG / PNG / ZIP</td></tr>
+<tr><td>SCR-03</td><td>gemini-api-key</td><td>Gemini APIキー</td><td>input type=password</td><td>○</td><td>autocomplete=off、maxlength=512</td></tr>
+<tr><td>SCR-03</td><td>clear-api-key</td><td>入力を消去</td><td>button</td><td>-</td><td>APIキー欄を空にしてfocus</td></tr>
+<tr><td>SCR-03</td><td>submit-button</td><td>解析</td><td>button</td><td>-</td><td>処理中disabled</td></tr>
+<tr><td>SCR-03</td><td>save-button</td><td>PostgreSQLへ保存</td><td>button</td><td>-</td><td>未保存解析結果がある時だけ表示</td></tr>
+<tr><td>SCR-04</td><td>user-id</td><td>ユーザID</td><td>input type=text</td><td>○</td><td>現行はFrontend内の固定値 <code>edix</code> と比較</td></tr>
+<tr><td>SCR-04</td><td>password</td><td>パスワード</td><td>input type=password</td><td>○</td><td>現行はFrontend内の固定値 <code>edix</code> と比較</td></tr>
+<tr><td>SCR-05</td><td>delete-selected</td><td>チェックしたレシートを削除</td><td>button</td><td>-</td><td>0件時hidden、未選択時disabled</td></tr>
+<tr><td>SCR-05</td><td>receipt-list</td><td>一覧</td><td>div</td><td>-</td><td>checkbox、テーブル名、行数、日時、参照</td></tr>
+<tr><td>SCR-05</td><td>detail-panel</td><td>詳細パネル</td><td>section</td><td>-</td><td>参照時表示</td></tr>
+</tbody></table></div></section>
+        <div class="nav-links"><a href="09_screen_design.html">← 画面設計書</a><a href="11_input_validation.html">入力チェック仕様書 →</a></div>
       </article>
     </main>
   </div>

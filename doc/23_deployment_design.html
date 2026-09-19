@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>デプロイ設計書</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：環境設計</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：環境設計</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,7 +25,7 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. Frontend</h2><ol><li>GitHubリポジトリへ <code>reFront/</code> を含む対象コミットをpush</li><li>GitHub Pagesの公開元をプロジェクト構成に合わせて設定</li><li>公開環境で <code>config.js</code> がRender API URLを選択することを確認</li><li>トップ、解析、一覧の静的資産が404にならないことを確認</li></ol></section><section class="chapter"><h2>2. Backend / DB</h2><ol><li>RenderでBlueprint Pathに <code>reBack/render.yml</code> を指定</li><li>Web Service <code>receipt-analysis-b8po</code> をDocker runtimeで作成</li><li>PostgreSQL <code>receipt-analysis-psl-service</code> を作成</li><li>DB_*がfromDatabaseで注入されることを確認</li><li>Health Check Path <code>/api/health</code> を確認</li><li>デプロイログでbuild / startupを確認</li></ol></section><section class="chapter"><h2>3. Dockerビルド</h2><p>build stageは <code>maven:3.9.11-eclipse-temurin-21-alpine</code>、runtimeは <code>eclipse-temurin:21-jre-alpine</code> です。パッケージ時は <code>-DskipTests</code> でJarを作成します。</p></section><section class="chapter"><h2>4. デプロイ後確認</h2><div class="table-wrap"><table><thead><tr><th>確認</th><th>期待</th></tr></thead><tbody><tr><td>GET /api/health</td><td>200 / status=UP</td></tr><tr><td>Frontend→GET /api/receipts</td><td>CORSエラーなし</td></tr><tr><td>画像解析</td><td>Gemini応答・結果表示</td></tr><tr><td>保存</td><td>新規receipt_&lt;uuid&gt;作成</td></tr><tr><td>一覧/詳細</td><td>保存内容を参照可能</td></tr><tr><td>削除</td><td>対象原文テーブルが消え、同一画像を再解析可能（構造化item注意）</td></tr></tbody></table></div></section><div class="nav-links"><a href="22_environment_variables.html">← 環境変数一覧</a><a href="24_coding_development_guide.html">開発・コーディングガイド →</a></div>
+        <section class="chapter"><h2>1. Frontend</h2><ol><li>GitHubリポジトリへ <code>reFront/</code> を含む対象コミットをpush</li><li>GitHub Pagesの公開元をプロジェクト構成に合わせて設定</li><li>公開環境で <code>config.js</code> がRender API URLを選択することを確認</li><li>トップ、解析、一覧の静的資産が404にならないことを確認</li></ol></section><section class="chapter"><h2>2. Backend / DB</h2><ol><li>RenderでBlueprint Pathに <code>reBack/render.yml</code> を指定</li><li>Web Service <code>receipt-analysis-b8po</code> をDocker runtimeで作成</li><li>PostgreSQL <code>receipt-analysis-psl-service</code> を作成</li><li>DB_*がfromDatabaseで注入されることを確認</li><li>Health Check Path <code>/api/health</code> を確認</li><li>デプロイログでbuild / startupを確認</li></ol></section><section class="chapter"><h2>3. Dockerビルド</h2><p>build stageは <code>maven:3.9.11-eclipse-temurin-21-alpine</code>、runtimeは <code>eclipse-temurin:21-jre-alpine</code> です。パッケージ時は <code>-DskipTests</code> でJarを作成します。</p></section><section class="chapter"><h2>4. デプロイ後確認</h2><div class="table-wrap"><table><thead><tr><th>確認</th><th>期待</th></tr></thead><tbody><tr><td>GET /api/health</td><td>200 / status=UP</td></tr><tr><td>Frontend→GET /api/receipts</td><td>CORSエラーなし</td></tr><tr><td>画像解析</td><td>Gemini応答・結果表示</td></tr><tr><td>保存</td><td>新規receipt_&lt;uuid&gt;作成</td></tr><tr><td>一覧/詳細</td><td>保存内容を参照可能</td></tr><tr><td>削除</td><td>対象原文テーブルと関連データが削除され、同一画像を再解析可能</td></tr></tbody></table></div></section><div class="nav-links"><a href="22_environment_variables.html">← 環境変数一覧</a><a href="24_coding_development_guide.html">開発・コーディングガイド →</a></div>
       </article>
     </main>
   </div>

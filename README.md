@@ -1,114 +1,107 @@
 # レシート解析システム
 
-レシート画像をGemini APIで解析し、抽出した文字列と構造化データを確認したうえでPostgreSQLへ保存するWebアプリケーションです。フロントエンドとバックエンドを分離し、デモ利用と実解析を切り替えられる構成にしています。
+レシート画像をGoogle Gemini APIで解析し、抽出した印字行と構造化データをPostgreSQLへ保存・参照・削除できるWebアプリケーションです。Frontendは静的HTML/CSS/JavaScript、BackendはJava 21 / Spring Boot 4.1.0で構成しています。
 
-## 構成
+## ディレクトリ構成
 
-```text
-receipt-analysis/
-├─ reFront/    # GitHub Pages向けの静的フロントエンド
-├─ reBack/     # Java 21 / Spring BootのREST API
-└─ doc/        # 日本語HTML納品ドキュメントと共通CSS
-```
-
-- フロントエンド：GitHub Pages
-- バックエンド：Render
-- データベース：PostgreSQL
-- AI解析：Google Gemini API
+- `reFront/` : GitHub Pages向けFrontend
+- `reBack/` : Render向けSpring Boot Backend
+- `doc/` : 要件定義、設計、テスト、リリース、運用・引継ぎをまとめたHTML文書
+- `index.html` : `reFront/index.html` への入口
 
 ## 主な機能
 
-- JPEG / PNG画像、またはJPEG / PNGを含むZIPの読み込み
-- Gemini APIによるレシート印字行と構造化データの抽出
-- 解析結果を確認してから実行するPostgreSQL保存
-- 画像SHA-256による保存済みレシートの重複防止
-- 保存済みレシートの一覧、詳細表示、選択削除
-- Gemini APIキーのリクエスト単位利用
-- APIキー不要の固定データデモ
+- APIキー不要のデモモード
+- JPEG / PNG画像の解析
+- JPEG / PNGのみを含むZIPのブラウザ展開と順次解析
+- Gemini APIによる印字行と構造化データの抽出
+- SHA-256による保存済み画像の重複防止
+- 解析とPostgreSQL保存の明確な分離
+- 保存済みレシートの一覧・詳細表示
+- レシート削除時の原文、構造化サマリー、商品明細、画像ハッシュの関連削除
 
-## APIキーの扱い
+## デモモード
 
-Gemini APIキーは画面から解析リクエストごとに入力します。アプリケーション、ブラウザストレージ、データベース、ログ、APIレスポンスには保存しません。利用上限超過やキー拒否が発生した場合は、画面で別のキーに入れ替えて再解析できます。
+`reFront/index.html` の「デモを試す」から利用できます。Gemini APIキーは不要です。固定のサンプルレシートと事前作成済みの解析結果をFrontendだけで表示し、Gemini API、Backend API、PostgreSQLには接続しません。
 
-## ローカル起動
+## 通常の解析フロー
 
-### 前提
+1. `reFront/upload.html` でGemini APIキーを入力します。
+2. JPEG / PNG、またはJPEG / PNGを含むZIPを選択します。
+3. 「解析」で画像を1枚ずつGemini APIへ送信し、解析結果を画面に表示します。
+4. 内容を確認後、「PostgreSQLへ保存」を押すと未保存の解析結果を保存します。
+5. 保存済みレシートは一覧・詳細画面から参照・削除できます。
+
+Gemini APIキーはリクエスト単位で使用し、ソースコード、環境変数、Browser Storage、データベースへ保存しません。
+
+## ローカル実行
+
+### 必要環境
 
 - Java 21
 - Maven
 - PostgreSQL
-- Node.js（フロントエンドのテストを実行する場合）
+- Python 3等の静的HTTPサーバー
+- Node.js（Frontendテストを実行する場合）
 
-### バックエンド
-
-PostgreSQLを用意し、必要に応じて次の環境変数を設定します。
-
-```bash
-export DB_HOST=localhost
-export DB_PORT=5432
-export DB_NAME=receipt_db
-export DB_USER=postgres
-export DB_PASSWORD='your_password'
-export APP_FRONTEND_ORIGIN='http://localhost:5051'
-```
-
-Gemini APIキー用の環境変数は設定しません。
+### Backend
 
 ```bash
 cd reBack
 mvn spring-boot:run
 ```
 
-標準ポートは `8081` です。起動確認には次を使用します。
+標準ポートは `8081`、ヘルスチェックは `GET http://localhost:8081/api/health` です。
 
-```bash
-curl http://localhost:8081/api/health
-```
-
-### フロントエンド
-
-別のターミナルで静的ファイルを配信します。
+### Frontend
 
 ```bash
 cd reFront
 python3 -m http.server 5051
 ```
 
-ブラウザで `http://localhost:5051` を開きます。固定デモだけを確認する場合は、バックエンドを起動する必要はありません。
+ブラウザで `http://localhost:5051` を開きます。デモモードだけを確認する場合、Backendは不要です。
 
-## APIの概要
+## 主要API
 
-| メソッド | パス | 用途 |
+| Method | Path | 概要 |
 | --- | --- | --- |
-| `GET` | `/api/health` | ヘルスチェック |
-| `GET` | `/api/receipts` | 保存済みレシート一覧 |
-| `GET` | `/api/receipts/{tableName}` | レシート詳細 |
-| `POST` | `/api/receipts/analyze` | 画像解析、抽出行・SHA-256・構造化データ取得 |
-| `POST` | `/api/receipts/save` | 解析結果の保存 |
-| `DELETE` | `/api/receipts/{tableName}` | レシートと関連データの削除 |
-
-`/api/receipts/analyze` は `multipart/form-data` の `file` と `geminiApiKey` を受け取ります。解析だけでは本文テーブルを作成せず、保存APIを呼び出した時点で保存します。
+| GET | `/api/health` | ヘルスチェック |
+| GET | `/api/receipts` | 保存済みレシート一覧 |
+| GET | `/api/receipts/{tableName}` | レシート詳細 |
+| POST | `/api/receipts/analyze` | 画像解析 |
+| POST | `/api/receipts/save` | 解析結果保存 |
+| DELETE | `/api/receipts/{tableName}` | レシートと関連データ削除 |
 
 ## テスト
 
+Frontend:
+
 ```bash
-# フロントエンド
 cd reFront
 node --test test/smoke.test.mjs
+```
 
-# バックエンド
-cd ../reBack
+2026-09-19の文書再作成時点で18/18 PASSを確認しています。
+
+Backend:
+
+```bash
+cd reBack
 mvn test
 ```
 
-## デプロイ
+Backendには19件のテストコードがあります。文書再作成環境ではMavenが利用できなかったため、リリース前にMaven利用可能環境で再実行してください。
 
-- フロントエンド：`reFront/` をGitHub Pagesへ公開
-- バックエンド：`reBack/` をRenderへデプロイ
-- Render設定：`reBack/render.yml`
+## 公開構成
 
-Render側ではデータベース接続情報と `APP_FRONTEND_ORIGIN` を設定します。Gemini APIキーは環境変数へ設定しません。
+- Frontend: GitHub Pages
+- Backend: Render Web Service（Docker）
+- Database: Render PostgreSQL
+- AI: Google Gemini API
 
-## ドキュメント
+Renderでは `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASSWORD`、`APP_FRONTEND_ORIGIN` を使用します。Gemini APIキーはRender環境変数へ設定しません。
 
-設計、要件、テスト、リリース、運用、引継ぎ資料は [`doc/index.html`](doc/index.html) から参照できます。各ページは日本語で記述し、共通のレスポンシブ／印刷レイアウトを使用しています。
+## 納品ドキュメント
+
+`doc/index.html` から、企画・要件定義・設計・実装・テスト・リリース・運用・引継ぎのHTML文書を参照できます。

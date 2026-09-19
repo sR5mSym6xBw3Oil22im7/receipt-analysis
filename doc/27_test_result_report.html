@@ -12,11 +12,11 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
+        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
         <h1>テスト結果報告書</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：テスト</span><span>文書版：1.0</span><span>作成日：2026-09-16</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：テスト</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,7 +25,10 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 納品時再実行結果</h2><div class="table-wrap"><table><thead><tr><th>対象</th><th>実行日</th><th>結果</th><th>備考</th></tr></thead><tbody><tr><td>Frontend Node test</td><td>2026-09-16</td><td><span class="status status-ok">PASS 17/17</span></td><td><code>cd reFront &amp;&amp; node --test test/smoke.test.mjs</code></td></tr><tr><td>Java runtime確認</td><td>2026-09-16</td><td><span class="status status-ok">Java 21</span></td><td>OpenJDK 21.0.12</td></tr><tr><td>Backend Maven test</td><td>2026-09-19</td><td><span class="status status-ok">PASS 19/19</span></td><td><code>cd reBack &amp;&amp; mvn test</code> / Failures 0, Errors 0</td></tr><tr><td>Gemini実API E2E</td><td>2026-09-16</td><td><span class="status status-ok">対象外</span></td><td>秘密APIキーを使用する受入時確認。本納品判定の対象外</td></tr><tr><td>Render PostgreSQL E2E</td><td>2026-09-16</td><td><span class="status status-ok">対象外</span></td><td>利用者のRender環境を使用する受入時確認。本納品判定の対象外</td></tr></tbody></table></div></section><section class="chapter"><h2>2. Frontendテスト詳細</h2><div class="kpi"><div><span>Suites</span><strong>1</strong><small>Node test runner</small></div><div><span>Tests</span><strong>17</strong><small>pass 17 / fail 0</small></div><div><span>Duration</span><strong>90.5 ms</strong><small>今回実行ログ</small></div></div></section><section class="chapter"><h2>3. Backendテストコード確認</h2><p>JUnitテスト19件を実行し、画像検証、APIキーpolicy、安全なテーブル名、Repositoryの作成・一覧・詳細・構造化サマリ・商品明細・hash削除、Geminiキー不足、Controllerの解析分離・SHA-256予約等をすべて確認しました。Failures 0、Errors 0です。</p></section><section class="chapter"><h2>4. 判定</h2><p><span class="status status-ok">合格</span></p><p>Frontend自動テストは17/17、Backend Maven testは19/19で、いずれも失敗0件です。実Gemini APIおよび利用者Render PostgreSQLを使うE2Eは、秘密情報・利用者環境を必要とする受入時確認として本納品判定の対象外とします。</p></section><div class="nav-links"><a href="26_test_cases.html">← テスト仕様書・テストケース一覧</a><a href="28_release_procedure.html">リリース手順書 →</a></div>
+        <section class="chapter"><h2>1. 納品時再確認結果</h2><div class="table-wrap"><table><thead><tr><th>対象</th><th>実行日</th><th>結果</th><th>備考</th></tr></thead><tbody><tr><td>Frontend Node test</td><td>2026-09-19</td><td><span class="status status-ok">PASS 18/18</span></td><td><code>cd reFront &amp;&amp; node --test test/smoke.test.mjs</code></td></tr><tr><td>Backendテストコード</td><td>2026-09-19</td><td><span class="status status-warn">19件を確認／未再実行</span></td><td>本再作成環境にはMavenがないため、<code>mvn test</code> はMaven利用可能環境で実行する</td></tr><tr><td>Gemini実API E2E</td><td>2026-09-19</td><td><span class="status status-warn">未実施</span></td><td>実APIキーが必要なため受入時確認</td></tr><tr><td>Render PostgreSQL E2E</td><td>2026-09-19</td><td><span class="status status-warn">未実施</span></td><td>利用者のRender環境で受入時確認</td></tr></tbody></table></div></section>
+        <section class="chapter"><h2>2. Frontendテスト詳細</h2><div class="kpi"><div><span>Tests</span><strong>18</strong><small>pass 18 / fail 0</small></div><div><span>Suites</span><strong>0</strong><small>Node test runner出力</small></div><div><span>Duration</span><strong>81.9 ms</strong><small>2026-09-19実行時</small></div></div><p>ファイル形式、ZIP処理、解析と保存の分離、APIキー非永続化、デモモード、保存済みレシート一覧・削除などの契約を確認しました。</p></section>
+        <section class="chapter"><h2>3. Backendテスト確認</h2><p><code>src/test/java</code> 配下に19件の <code>@Test</code> を確認しました。対象は画像検証、APIキーポリシー、安全なテーブル名、Repository、削除時の関連データ整合性、Geminiエラー変換、Controller連携等です。本再作成環境ではMavenコマンドが利用できないため、実行結果は確定していません。</p></section>
+        <section class="chapter"><h2>4. 判定</h2><p><span class="status status-warn">条件付き確認</span></p><p>Frontendは18/18 PASSです。BackendはMaven利用可能環境で <code>mvn test</code> を実行し、0 failであることをリリース前に確認してください。実Gemini APIおよびRender PostgreSQLを使用するE2Eも受入時確認とします。</p></section><div class="nav-links"><a href="26_test_cases.html">← テスト仕様書・テストケース一覧</a><a href="28_release_procedure.html">リリース手順書 →</a></div>
       </article>
     </main>
   </div>
