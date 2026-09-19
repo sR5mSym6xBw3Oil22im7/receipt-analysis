@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>レシート解析 デモ</title>
+  <link rel="stylesheet" href="./styles.css?v=20260919-demo">
+</head>
+<body>
+  <main class="container">
+    <p><a href="./index.html">← メニューへ戻る</a></p>
+    <section class="card">
+      <div class="demo-heading">
+        <div>
+          <p class="demo-eyebrow">APIキー不要 / 固定データ</p>
+          <h1>レシート解析 デモ</h1>
+        </div>
+        <span class="menu-link-badge">デモモード</span>
+      </div>
+      <p>このデモではGemini APIを呼び出さず、あらかじめ用意したサンプルデータを使用します。Gemini APIキーは必要ありません。</p>
+      <div class="demo-note" role="note">
+        <strong>デモについて</strong>
+        <span>実際の解析やデータベースへの保存は行わず、Frontendだけで動作します。</span>
+      </div>
+    </section>
+
+    <section class="card demo-workspace">
+      <div class="demo-receipt-panel">
+        <h2>サンプルレシート</h2>
+        <p class="help-text">個人情報を含まない、デモ専用の架空レシートです。</p>
+        <figure class="sample-receipt">
+          <img src="./assets/demo-receipt.svg" alt="サンプルストアの架空レシート。牛乳、食パン、卵、コーヒー、合計1082円。">
+          <figcaption>demo-receipt.svg / デモ専用サンプル</figcaption>
+        </figure>
+      </div>
+      <div class="demo-action-panel">
+        <h2>解析を体験</h2>
+        <p>ボタンを押すと、短い解析中表示のあとに固定の解析結果を表示します。</p>
+        <button id="demo-analyze-button" type="button">画像解析</button>
+        <p id="demo-status" class="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="demo-result-card" class="card hidden" aria-live="polite">
+      <h2>解析結果</h2>
+      <p class="demo-result-note">※この結果はデモ用に事前作成した固定データです。実際のAI解析を行う場合はGemini APIキーが必要です。</p>
+      <div id="demo-result" class="receipt-results"></div>
+    </section>
+  </main>
+  <script src="./demo.js?v=20260919-demo"></script>
+</body>
+</html>

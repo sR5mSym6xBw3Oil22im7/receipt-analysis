@@ -4,6 +4,8 @@ import { readFile } from "node:fs/promises";
 
 const html = await readFile(new URL("../upload.html", import.meta.url), "utf8");
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const demo = await readFile(new URL("../demo.html", import.meta.url), "utf8");
+const demoJs = await readFile(new URL("../demo.js", import.meta.url), "utf8");
 const select = await readFile(new URL("../select.html", import.meta.url), "utf8");
 const js = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const selectJs = await readFile(new URL("../select.js", import.meta.url), "utf8");
@@ -111,10 +113,29 @@ test("frontend does not persist the Gemini API key in browser storage", () => {
   assert.doesNotMatch(js, /sessionStorage/);
 });
 
-test("index links to upload and select pages", () => {
+test("index links to demo, upload, and the saved-receipts login entry", () => {
+  assert.match(index, /href="\.\/demo\.html"/);
+  assert.match(index, /デモを試す/);
+  assert.match(index, /APIキー不要/);
   assert.match(index, /href="\.\/upload\.html"/);
-  assert.match(index, /id="select-link"[^>]*href="\.\/select\.html"/);
+  assert.match(index, /id="select-link"[^>]*href="\.\/login\.html"/);
   assert.match(index, /<script src="\.\/index\.js"><\/script>/);
+});
+
+test("demo uses fixed frontend data without API or database calls", () => {
+  assert.match(demo, /レシート解析 デモ/);
+  assert.match(demo, /Gemini APIキーは必要ありません/);
+  assert.match(demo, /demo-receipt\.svg/);
+  assert.match(demo, /画像解析/);
+  assert.match(demo, /デモ用に事前作成した固定データ/);
+  assert.match(demoJs, /const demoReceipt =/);
+  assert.match(demoJs, /解析中\.\.\./);
+  assert.match(demoJs, /setTimeout/);
+  assert.match(demoJs, /resultCard\.scrollIntoView/);
+  assert.match(demoJs, /サンプルストア/);
+  assert.match(demoJs, /1082/);
+  assert.doesNotMatch(demoJs, /fetch\s*\(/);
+  assert.doesNotMatch(demoJs, /localStorage|sessionStorage/);
 });
 
 test("index hides the select link when PostgreSQL has no receipts", () => {

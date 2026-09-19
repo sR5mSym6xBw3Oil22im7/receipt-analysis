@@ -6,7 +6,8 @@
 
 | ファイル | 役割 |
 | --- | --- |
-| `index.html` | メニュー画面。解析画面と保存済みレシート画面への入口 |
+| `index.html` | メニュー画面。デモ、解析画面、保存済みレシート画面への入口 |
+| `demo.html` | APIキー不要の固定データによるデモ画面 |
 | `upload.html` | JPEG / PNG / ZIPの選択、Gemini APIキー入力、解析結果確認、PostgreSQL保存 |
 | `select.html` | 保存済みレシート一覧、詳細表示、選択削除 |
 | `config.js` | 接続先バックエンドURLの切り替え |
@@ -16,6 +17,12 @@
 | `index.js` | 保存済みデータ有無に応じたメニュー表示制御 |
 
 `access-guard.js` は画面遷移を制御するための仕組みであり、認証機能ではありません。
+
+## デモの使い方
+
+`index.html` の「デモを試す」から利用できます。Gemini APIキーは不要です。
+デモはFrontend内の固定データだけで動作し、Gemini API、Backend API、PostgreSQLには接続しません。
+解析結果付近にも、実際のAI解析ではなくデモ用データであることを表示します。
 
 ## 接続先バックエンド
 
@@ -81,7 +88,7 @@ python3 -m http.server 5051
 http://localhost:5051
 ```
 
-バックエンドは別途 `http://localhost:8081` で起動してください。
+デモだけを確認する場合はバックエンドを起動する必要はありません。通常のGemini解析や保存済みレシート画面を利用する場合は、別途 `http://localhost:8081` でバックエンドを起動してください。
 
 ## GitHub Pagesへの公開
 

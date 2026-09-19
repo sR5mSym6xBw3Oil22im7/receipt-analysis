@@ -46,6 +46,7 @@ node --test test/smoke.test.mjs
 
 cd ../reBack
 mvn test</code></pre></section><section class="chapter"><h2>5. 主要API</h2><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th></tr></thead><tbody><tr><td>GET</td><td>/api/health</td></tr><tr><td>GET</td><td>/api/receipts</td></tr><tr><td>GET</td><td>/api/receipts/{tableName}</td></tr><tr><td>DELETE</td><td>/api/receipts/{tableName}</td></tr><tr><td>POST</td><td>/api/receipts/analyze</td></tr><tr><td>POST</td><td>/api/receipts/save</td></tr></tbody></table></div></section><section class="chapter"><h2>6. 文書の読み方</h2><p>まず「01 プロジェクト概要書」「03 要件定義書」「12 システム構成設計書」を確認し、実装詳細は13〜20、環境は21〜24、品質確認は25〜27、公開・運用は28〜30を参照してください。</p></section><div class="nav-links"><a href="30_data_retention_policy.html">← データ保持・削除方針書</a><a href="32_portfolio_description.html">ポートフォリオ説明資料 →</a></div>
+        <section class="chapter"><h2>デモ利用</h2><p>トップページの「デモを試す」から、Gemini APIキーなしで固定のサンプルレシートを体験できます。デモはFrontend内だけで動作し、Gemini API、Backend API、PostgreSQLには接続しません。</p></section>
       </article>
     </main>
   </div>
