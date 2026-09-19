@@ -1,3 +1,5 @@
+/* レシート解析システム 印刷用スタイル */
+@page{size:A4;margin:14mm}
 body{background:#fff!important;color:#000!important;font-size:10.5pt}
 .site-header{background:#fff!important;color:#000!important;padding:0 0 15px!important;border-bottom:2px solid #000!important}
 .eyebrow,.header-lead{color:#000!important}

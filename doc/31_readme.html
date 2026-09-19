@@ -12,7 +12,7 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="header-copy">
-        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
+        <p class="eyebrow">レシート解析システム / 納品ドキュメント</p>
         <h1>README</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
@@ -25,14 +25,12 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 概要</h2><p>レシート画像をGemini APIで解析し、原文行と構造化情報をPostgreSQLへ保存するWebアプリケーションです。FrontendはGitHub Pages、BackendはRender、DBはPostgreSQLを想定します。</p></section><section class="chapter"><h2>2. ディレクトリ</h2><pre><code>receipt-analysis-main/
-├─ reFront/        # HTML/CSS/JavaScript
+        <section class="chapter"><h2>1. 概要</h2><p>レシート画像をGemini APIで解析し、原文行と構造化情報をPostgreSQLへ保存するWebアプリケーションです。フロントエンドはGitHub Pages、バックエンドはRender、データベースはPostgreSQLを想定します。</p></section><section class="chapter"><h2>2. ディレクトリ</h2><pre><code>receipt-analysis/
+├─ reFront/        # HTML / CSS / JavaScript
 ├─ reBack/         # Java 21 / Spring Boot / Docker / Render
-├─ doc/            # HTML納品ドキュメント
- 過去のテスト記録
-# 過去のテスト記録
-├─ README.md
-└─ index.html      # reFrontへredirect</code></pre></section><section class="chapter"><h2>3. ローカル起動</h2><pre><code># PostgreSQLを用意
+├─ doc/            # 日本語HTML納品ドキュメント
+├─ README.md       # システム全体のREADME
+└─ index.html      # reFrontへの入口</code></pre></section><section class="chapter"><h2>3. ローカル起動</h2><pre><code># PostgreSQLを用意
 cd reBack
 mvn spring-boot:run
 
@@ -46,7 +44,7 @@ node --test test/smoke.test.mjs
 
 cd ../reBack
 mvn test</code></pre></section><section class="chapter"><h2>5. 主要API</h2><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th></tr></thead><tbody><tr><td>GET</td><td>/api/health</td></tr><tr><td>GET</td><td>/api/receipts</td></tr><tr><td>GET</td><td>/api/receipts/{tableName}</td></tr><tr><td>DELETE</td><td>/api/receipts/{tableName}</td></tr><tr><td>POST</td><td>/api/receipts/analyze</td></tr><tr><td>POST</td><td>/api/receipts/save</td></tr></tbody></table></div></section><section class="chapter"><h2>6. 文書の読み方</h2><p>まず「01 プロジェクト概要書」「03 要件定義書」「12 システム構成設計書」を確認し、実装詳細は13〜20、環境は21〜24、品質確認は25〜27、公開・運用は28〜30を参照してください。</p></section><div class="nav-links"><a href="30_data_retention_policy.html">← データ保持・削除方針書</a><a href="32_portfolio_description.html">ポートフォリオ説明資料 →</a></div>
-        <section class="chapter"><h2>デモ利用</h2><p>トップページの「デモを試す」から、Gemini APIキーなしで固定のサンプルレシートを体験できます。デモはFrontend内だけで動作し、Gemini API、Backend API、PostgreSQLには接続しません。</p></section>
+        <section class="chapter"><h2>デモ利用</h2><p><code>reFront/demo.html</code>（ローカルURL：<code>http://localhost:5051/demo.html</code>）またはトップページの「デモを試す」から、Gemini APIキーなしで固定のサンプルレシートを体験できます。デモはFrontend内だけで動作し、Gemini API、Backend API、PostgreSQLには接続しません。実際の解析・保存機能を使う場合は、トップページから解析画面へ進んでください。</p></section>
       </article>
     </main>
   </div>

@@ -1,8 +1,8 @@
 # reBack
 
-`reBack` は、レシート画像の解析・保存・参照・削除を提供するバックエンドです。Java 21 / Spring Boot 4.1.0 で構成し、Gemini APIによるレシート解析とPostgreSQLへのデータ保存を行います。
+`reBack` は、レシート画像の解析、確認後の保存、一覧・詳細表示、削除を提供するREST APIです。Java 21とSpring Bootで構成し、Gemini APIとPostgreSQLを連携します。
 
-## 主な構成
+## 使用技術
 
 - Java 21
 - Spring Boot 4.1.0
@@ -13,11 +13,9 @@
 - Maven
 - Docker / Render
 
-テスト時はH2 Databaseを使用します。
+テストではH2 Databaseを使用します。
 
 ## 必要な環境
-
-ローカルで起動する場合は、次の環境を用意してください。
 
 - Java 21
 - Maven
@@ -25,7 +23,7 @@
 
 ## 環境変数
 
-| 環境変数 | 用途 | 既定値 |
+| 変数 | 用途 | 既定値 |
 | --- | --- | --- |
 | `PORT` | Spring Bootの待受ポート | `8081` |
 | `DB_HOST` | PostgreSQLのホスト名 | `localhost` |
@@ -35,7 +33,7 @@
 | `DB_PASSWORD` | データベースパスワード | `postgres` |
 | `APP_FRONTEND_ORIGIN` | CORSで許可するフロントエンドOrigin | `http://localhost:5051` |
 
-Gemini APIキーは環境変数に保存しません。フロントエンドから解析リクエストごとに受け取り、そのGemini API呼び出しにだけ使用します。
+Gemini APIキーは環境変数に保存しません。フロントエンドから解析リクエストごとに受け取り、そのリクエストのGemini API呼び出しだけに使用します。
 
 ## ローカル起動
 
@@ -43,9 +41,7 @@ Gemini APIキーは環境変数に保存しません。フロントエンドか�
 mvn spring-boot:run
 ```
 
-`spring-boot-maven-plugin` の設定により、ローカル起動時は `local` プロファイルを使用します。ログは標準出力に加え、`log/backend.log` にも出力されます。
-
-ヘルスチェックは次のURLで確認できます。
+ローカル起動時は `local` プロファイルを使用します。ログは標準出力に加えて `log/backend.log` にも出力されます。
 
 ```bash
 curl http://localhost:8081/api/health
@@ -56,48 +52,28 @@ curl http://localhost:8081/api/health
 | メソッド | パス | 概要 |
 | --- | --- | --- |
 | `GET` | `/api/health` | ヘルスチェック |
-| `GET` | `/api/receipts` | 保存済みレシート一覧を取得 |
-| `GET` | `/api/receipts/{tableName}` | 保存済みレシート詳細を取得 |
-| `POST` | `/api/receipts/analyze` | レシート画像を解析し、抽出行・SHA-256・構造化データを返却 |
-| `POST` | `/api/receipts/save` | 解析済みレシートをPostgreSQLへ保存 |
-| `DELETE` | `/api/receipts/{tableName}` | レシートと対応する重複チェック情報を削除 |
+| `GET` | `/api/receipts` | 保存済みレシート一覧 |
+| `GET` | `/api/receipts/{tableName}` | 保存済みレシート詳細 |
+| `POST` | `/api/receipts/analyze` | 画像解析、抽出行・SHA-256・構造化データの返却 |
+| `POST` | `/api/receipts/save` | 解析済みレシートの保存 |
+| `DELETE` | `/api/receipts/{tableName}` | レシートと関連する重複チェック情報の削除 |
 
-`POST /api/receipts/analyze` は `multipart/form-data` の `file` と `geminiApiKey` を受け取ります。画像はJPEGまたはPNG、1画像あたり5MB以下です。
+解析APIは `multipart/form-data` の `file` と `geminiApiKey` を受け取り、JPEGまたはPNGかつ1画像5MB以下であることを検証します。保存APIはJSONで解析結果を受け取ります。
 
-`POST /api/receipts/save` はJSONで解析結果を受け取り、レシート本文と構造化データを保存します。
-
-## 解析と保存の流れ
+## 解析から保存まで
 
 1. 画像形式とサイズを検証します。
 2. 画像バイト列からSHA-256を算出します。
-3. Gemini APIへ画像を送信し、印字行と構造化データを取得します。
-4. SHA-256を `receipt_image_hash_registry` に予約登録し、保存済み画像かどうかの判定に使用します。未保存の予約行（`table_name` が `NULL`）は再解析を許可します。
-5. フロントエンドで内容確認後、保存APIを実行するとレシート用テーブルを作成し、解析結果を保存します。
-6. レシート削除時は、対象の原文テーブル、`receipt_structured_summary` と `receipt_structured_item` の関連行、対応するSHA-256登録を同一トランザクションで削除します。構造化商品テーブルにはサマリーテーブルへの外部キー（ON DELETE CASCADE）も設定します。
+3. Gemini APIから印字行と構造化データを取得します。
+4. SHA-256を重複チェック用に予約します。未保存の予約は再解析できます。
+5. 保存APIの呼び出し時にレシート本文と構造化データを保存します。
+6. 削除時は本文、構造化サマリ、商品明細、SHA-256登録を同一トランザクションで削除します。
 
-レシート用テーブル名はバックエンドでUUIDから生成します。利用者の入力値やGemini APIの出力値をテーブル名として使用しません。
+レシート本文のテーブル名はUUIDから生成し、利用者の入力値やGeminiの出力値を識別子として使用しません。
 
-## 削除時のデータ整合性
+## セキュリティとCORS
 
-レシート削除処理は、原文テーブル、`receipt_structured_summary`、`receipt_structured_item`、`receipt_image_hash_registry` の関連データを同一トランザクションで削除します。`receipt_structured_item.receipt_table_name` にはサマリーテーブルへの外部キーと `ON DELETE CASCADE` を設定し、構造化保存時には既存の孤立商品行を除去してから制約を適用します。
-
-## Gemini APIキーの扱い
-
-受信したGemini APIキーは、そのリクエストのAPI呼び出しにだけ使用します。データベース、APIレスポンス、アプリケーションログには保存・出力しません。
-
-APIキー未入力、拒否、利用上限超過などは、バックエンドでエラーコードへ変換してフロントエンドへ返します。
-
-使用モデルは `application.yml` の `gemini.receipt-model` で設定し、現行値は `gemini-3.5-flash-lite` です。
-
-## CORS
-
-`/api/**` では、設定値 `APP_FRONTEND_ORIGIN` に加え、次のOriginを許可しています。
-
-- `https://sr5msym6xbw3oil22im7.github.io`
-- `http://localhost:5051`
-- `http://127.0.0.1:5051`
-
-許可メソッドは `GET` / `POST` / `DELETE` / `OPTIONS` です。
+受信したGemini APIキーはリクエスト内だけで使用し、データベース、レスポンス、ログへ出力しません。`APP_FRONTEND_ORIGIN` に加え、公開フロントエンドとローカル開発用Originを許可します。許可メソッドは `GET`、`POST`、`DELETE`、`OPTIONS` です。
 
 ## テスト
 
@@ -105,10 +81,8 @@ APIキー未入力、拒否、利用上限超過などは、バックエンド�
 mvn test
 ```
 
-バックエンドのテストコードは `src/test/` 配下にあります。
+テストコードは `src/test/` 配下にあります。
 
 ## Renderへのデプロイ
 
-`render.yml` にRender Blueprintを定義しています。Web ServiceはDockerでビルドし、`/api/health` をヘルスチェックに使用します。
-
-Render側ではPostgreSQL接続情報と `APP_FRONTEND_ORIGIN` を設定します。Gemini APIキーはRenderの環境変数には設定しません。
+`render.yml` にRender Blueprintを定義しています。Web ServiceはDockerでビルドし、`/api/health` をヘルスチェックに使用します。Render側ではPostgreSQL接続情報と `APP_FRONTEND_ORIGIN` を設定してください。

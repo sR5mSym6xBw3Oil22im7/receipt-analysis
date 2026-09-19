@@ -1,40 +1,36 @@
 # レシート解析システム
 
-レシート画像をGemini APIで解析し、抽出したテキストをPostgreSQLへ保存するWebアプリケーションです。
+レシート画像をGemini APIで解析し、抽出した文字列と構造化データを確認したうえでPostgreSQLへ保存するWebアプリケーションです。フロントエンドとバックエンドを分離し、デモ利用と実解析を切り替えられる構成にしています。
 
 ## 構成
 
-- `reFront/`: GitHub Pagesで公開するフロントエンド（HTML / CSS / JavaScript）
-- `reBack/`: Spring Boot 4.1.0・Java 21で構築したバックエンド
-- `doc/`: HTML形式の納品ドキュメント一式（要件定義、設計、テスト、リリース、運用等）
+```text
+receipt-analysis/
+├─ reFront/    # GitHub Pages向けの静的フロントエンド
+├─ reBack/     # Java 21 / Spring BootのREST API
+└─ doc/        # 日本語HTML納品ドキュメントと共通CSS
+```
 
-フロントエンドはGitHub Pages、バックエンドはRender、データベースはPostgreSQLでの運用を想定しています。
+- フロントエンド：GitHub Pages
+- バックエンド：Render
+- データベース：PostgreSQL
+- AI解析：Google Gemini API
 
 ## 主な機能
 
-1. `reFront/demo.html` ではGemini APIキーなしで、固定のサンプルレシートを使った解析操作を体験できます。
-2. `upload.html` でGemini APIキーとJPEG / PNG画像、またはJPEG / PNG画像を含むZIPファイルを選択します。
-3. 「解析」で画像を1枚ずつ解析し、抽出テキストを画面に表示します。直接画像は1枚、ZIPの場合は内部画像を順番に処理します。
-4. 解析時には画像のSHA-256を重複チェック用に登録しますが、レシート本文は保存しません。
-5. 「PostgreSQLへ保存」を押すと、未登録の解析結果だけを保存します。
-6. 保存済み画像は409エラーとして扱い、同じ画像の二重登録を防止します。
+- JPEG / PNG画像、またはJPEG / PNGを含むZIPの読み込み
+- Gemini APIによるレシート印字行と構造化データの抽出
+- 解析結果を確認してから実行するPostgreSQL保存
+- 画像SHA-256による保存済みレシートの重複防止
+- 保存済みレシートの一覧、詳細表示、選択削除
+- Gemini APIキーのリクエスト単位利用
+- APIキー不要の固定データデモ
 
-## デモを利用する場合
+## APIキーの扱い
 
-トップページの「デモを試す」から利用できます。Gemini APIキーは不要です。
-デモでは事前に用意した固定データを表示し、Gemini APIへの通信およびPostgreSQLへの保存は行いません。
+Gemini APIキーは画面から解析リクエストごとに入力します。アプリケーション、ブラウザストレージ、データベース、ログ、APIレスポンスには保存しません。利用上限超過やキー拒否が発生した場合は、画面で別のキーに入れ替えて再解析できます。
 
-## 実際にGemini解析を利用する場合
-
-「レシートを解析」から利用者自身のGemini APIキーを入力してください。APIキーはアプリケーション側に保存しません。
-
-## Gemini APIキーの扱い
-
-APIキーは画面の入力欄からリクエストごとに入力してください。環境変数、ソースコード、localStorage、sessionStorage、データベースには保存しません。バックエンドも受信したキーを、そのリクエストのGemini API呼び出しだけに使用します。
-
-Geminiの利用上限に達した場合やキーが無効な場合は、画面上でキーを入れ替えて同じ画像を再解析できます。
-
-## ローカル環境での起動
+## ローカル起動
 
 ### 前提
 
@@ -43,9 +39,9 @@ Geminiの利用上限に達した場合やキーが無効な場合は、画面�
 - PostgreSQL
 - Node.js（フロントエンドのテストを実行する場合）
 
-### 1. PostgreSQLの設定
+### バックエンド
 
-`receipt_db` データベースを作成し、必要に応じて次の環境変数を設定します。
+PostgreSQLを用意し、必要に応じて次の環境変数を設定します。
 
 ```bash
 export DB_HOST=localhost
@@ -58,61 +54,61 @@ export APP_FRONTEND_ORIGIN='http://localhost:5051'
 
 Gemini APIキー用の環境変数は設定しません。
 
-### 2. バックエンドの起動
-
 ```bash
 cd reBack
 mvn spring-boot:run
 ```
 
-標準ポートは `8081` です。ヘルスチェックは次のURLで確認できます。
+標準ポートは `8081` です。起動確認には次を使用します。
 
 ```bash
 curl http://localhost:8081/api/health
 ```
 
-### 3. フロントエンドの起動
+### フロントエンド
 
-別のターミナルで実行します。
+別のターミナルで静的ファイルを配信します。
 
 ```bash
 cd reFront
 python3 -m http.server 5051
 ```
 
-ブラウザで `http://localhost:5051` を開き、APIキーとレシート画像を入力してください。
+ブラウザで `http://localhost:5051` を開きます。固定デモだけを確認する場合は、バックエンドを起動する必要はありません。
 
 ## APIの概要
 
-- `GET /api/health`: ヘルスチェック
-- `GET /api/receipts`: 保存済みレシートの一覧取得
-- `GET /api/receipts/{tableName}`: レシート詳細の取得
-- `POST /api/receipts/analyze`: 画像を解析し、テキストとSHA-256を返す
-- `POST /api/receipts/save`: 解析済みテキストをPostgreSQLへ保存
-- `DELETE /api/receipts/{tableName}`: レシート本体、構造化サマリ・商品明細、重複チェック情報を削除
+| メソッド | パス | 用途 |
+| --- | --- | --- |
+| `GET` | `/api/health` | ヘルスチェック |
+| `GET` | `/api/receipts` | 保存済みレシート一覧 |
+| `GET` | `/api/receipts/{tableName}` | レシート詳細 |
+| `POST` | `/api/receipts/analyze` | 画像解析、抽出行・SHA-256・構造化データ取得 |
+| `POST` | `/api/receipts/save` | 解析結果の保存 |
+| `DELETE` | `/api/receipts/{tableName}` | レシートと関連データの削除 |
 
-`/api/receipts/analyze` は `multipart/form-data` の `file` と `geminiApiKey` を受け取ります。解析時にレシート本文のテーブルは作成されません。保存処理は `/api/receipts/save` を呼び出したときだけ実行されます。
+`/api/receipts/analyze` は `multipart/form-data` の `file` と `geminiApiKey` を受け取ります。解析だけでは本文テーブルを作成せず、保存APIを呼び出した時点で保存します。
 
 ## テスト
 
-バックエンド:
-
 ```bash
-cd reBack
-mvn test
-```
-
-フロントエンド:
-
-```bash
+# フロントエンド
 cd reFront
 node --test test/smoke.test.mjs
+
+# バックエンド
+cd ../reBack
+mvn test
 ```
 
 ## デプロイ
 
-- フロントエンド: `reFront/` をGitHub Pagesへ公開
-- バックエンド: `reBack/` をRenderへデプロイ
-- Render Blueprint: `reBack/render.yml`
+- フロントエンド：`reFront/` をGitHub Pagesへ公開
+- バックエンド：`reBack/` をRenderへデプロイ
+- Render設定：`reBack/render.yml`
 
-RenderではDB接続情報と `APP_FRONTEND_ORIGIN` を環境変数に設定してください。Gemini APIキーは環境変数として設定しません。
+Render側ではデータベース接続情報と `APP_FRONTEND_ORIGIN` を設定します。Gemini APIキーは環境変数へ設定しません。
+
+## ドキュメント
+
+設計、要件、テスト、リリース、運用、引継ぎ資料は [`doc/index.html`](doc/index.html) から参照できます。各ページは日本語で記述し、共通のレスポンシブ／印刷レイアウトを使用しています。
