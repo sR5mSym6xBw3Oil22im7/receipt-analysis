@@ -26,3 +26,9 @@ app:
 
 gemini:
   receipt-model: gemini-3.5-flash-lite
+
+logging:
+  logback:
+    rollingpolicy:
+      file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.zip"
+

@@ -1,3 +1,7 @@
 logging:
   file:
     name: log/backend.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.zip"
+
