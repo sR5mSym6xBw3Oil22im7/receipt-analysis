@@ -25,6 +25,9 @@
 | `DB_USER` | DBユーザー | `postgres` |
 | `DB_PASSWORD` | DBパスワード | `postgres` |
 | `APP_FRONTEND_ORIGIN` | CORS許可Frontend Origin | `http://localhost:5051` |
+| `GEMINI_IMAGE_MODEL` | モンスター画像生成モデル | `gemini-3.1-flash-image` |
+| `FLYWAY_ENABLED` | Flyway実行 | `true` |
+| `FLYWAY_BASELINE_ON_MIGRATE` | 既存DBへの初回導入時だけ有効化 | `false` |
 
 Gemini APIキーは環境変数へ保存しません。`POST /api/receipts/analyze` で受け取った値を、そのリクエストのGemini API呼び出しだけに使用します。
 
@@ -46,6 +49,10 @@ mvn spring-boot:run
 | POST | `/api/receipts/analyze` | JPEG / PNG画像を解析 |
 | POST | `/api/receipts/save` | 解析結果を保存 |
 | DELETE | `/api/receipts/{tableName}` | レシートと関連データを削除 |
+| POST | `/api/receipt-game/candidates` | 画像を1枚解析・保存してゲーム候補へ追加 |
+| POST | `/api/receipt-game/monsters/{receiptTableName}` | モンスター生成／保存済み画像再利用 |
+| POST | `/api/receipt-game/battles/local` | 同一PCの一回限りバトル計算 |
+| POST / GET | `/api/receipt-game/rooms...` | 2台PCルーム、候補、LOCK、ポーリング |
 
 `/api/receipts/analyze` は `multipart/form-data` の `file` と `geminiApiKey` を受け取ります。画像はJPEG / PNG、1画像5MB以下です。
 
@@ -83,8 +90,22 @@ mvn spring-boot:run
 mvn test
 ```
 
-`src/test/java` 配下には19件のテストがあります。`mvn test` を実行し、19/19 PASS（Failures 0、Errors 0）を確認済みです。
+`src/test/java` 配下には22件のテストがあります。`mvn test` を実行し、22/22 PASS（Failures 0、Errors 0）を確認済みです。
 
 ## Render
 
 `render.yml` にWeb ServiceとPostgreSQLのBlueprintを定義しています。Web ServiceはDockerでビルドし、`/api/health` をヘルスチェックに使用します。
+
+## Receipt Change Monster Game
+
+`reFront/game.html` から利用できます。ゲームモードだけ1人最大10枚を受け付け、候補画像は1枚ずつゲーム専用APIへ送信します。既存の通常解析（ZIPを含む）の上限は変更していません。ゲーム候補は保存済みSHA-256を先に照合し、保存済みレシート／モンスターを再利用します。
+
+能力値・レアリティ・モンスター名・visual profileはBackendでSHA-256から決定的に生成します。モンスター画像は生成後に512x512 JPEG 1枚として `receipt_game_monster` へ保存し、画像生成プロンプトへ生のOCR、住所、電話番号、決済情報、ブランド文字を渡しません。
+
+ローカルPostgreSQLは次で起動できます。Frontendは既存どおり `python3 -m http.server 5051 --directory ..`、Backendは `mvn spring-boot:run` です。
+
+```bash
+docker compose -f ../compose.local.yaml up -d
+```
+
+Flywayは `src/main/resources/db/migration` を適用します。既存のRender DBへ初めて導入する場合だけ、既存スキーマを確認したうえで `FLYWAY_BASELINE_ON_MIGRATE=true` と `FLYWAY_BASELINE_VERSION=0` を一度設定して起動し、V1以降が適用されたことを確認してから設定を戻してください。空のDBへは通常設定のまま適用します。

@@ -4,6 +4,8 @@ spring:
     username: sa
     password:
     driver-class-name: org.h2.Driver
+  flyway:
+    enabled: false
 app:
   frontend-origin: http://localhost:5051
   max-upload-bytes: 5242880

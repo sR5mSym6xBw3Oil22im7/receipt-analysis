@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: receipt-analysis-postgres-local
+    environment:
+      POSTGRES_DB: receipt_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - receipt-analysis-postgres-data-v18:/var/lib/postgresql
+volumes:
+  receipt-analysis-postgres-data-v18:

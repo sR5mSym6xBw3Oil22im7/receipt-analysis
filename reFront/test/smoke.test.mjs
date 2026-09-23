@@ -12,6 +12,8 @@ const selectJs = await readFile(new URL("../select.js", import.meta.url), "utf8"
 const config = await readFile(new URL("../config.js", import.meta.url), "utf8");
 const indexJs = await readFile(new URL("../index.js", import.meta.url), "utf8");
 const accessGuard = await readFile(new URL("../access-guard.js", import.meta.url), "utf8");
+const game = await readFile(new URL("../game.html", import.meta.url), "utf8");
+const gameJs = await readFile(new URL("../game.js", import.meta.url), "utf8");
 
 test("frontend accepts JPEG, PNG, and ZIP", () => {
   assert.match(html, /accept="image\/jpeg,image\/png,\.zip,application\/zip"/);
@@ -168,4 +170,15 @@ test("select page loads receipt list and detail bubble", () => {
   assert.match(selectJs, /selectedTableNames/);
   assert.match(selectJs, /receiptCount/);
   assert.match(select, /チェックしたレシートを削除/);
+});
+
+test("receipt game supports ten candidates, in-memory API keys, and room polling", () => {
+  assert.match(index, /game\.html/);
+  assert.match(game, /multiple/);
+  assert.match(game, /accept="image\/jpeg,image\/png"/);
+  assert.match(gameJs, /files\.length>10/);
+  assert.match(gameJs, /files\.some\(f=>f\.size>5242880\)/);
+  assert.match(gameJs, /X-Receipt-Game-Token/);
+  assert.match(gameJs, /setInterval\(async\(\)=>/);
+  assert.doesNotMatch(gameJs, /localStorage|sessionStorage/);
 });
