@@ -190,5 +190,8 @@ test("receipt game supports ten candidates, clears API key state on quota errors
   assert.match(gameJs, /clearStoredApiKeys/);
   assert.match(gameJs, /status===429/);
   assert.match(gameJs, /document\.cookie/);
+  assert.match(gameJs, /const geminiApiKey=document\.getElementById\("game-api-key"\)\.value\.trim\(\)/);
+  assert.match(gameJs, /new URLSearchParams\(\{geminiApiKey\}\)/);
+  assert.match(game, /game\.js\?v=receipt-game-api-key-reset-v2/);
   assert.doesNotMatch(gameJs, /localStorage\.setItem|sessionStorage\.setItem/);
 });

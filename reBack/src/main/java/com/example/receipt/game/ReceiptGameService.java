@@ -1,5 +1,7 @@
 package com.example.receipt.game;
 
+import com.example.receipt.exception.ReceiptException;
+
 import com.example.receipt.dto.ReceiptText;
 import com.example.receipt.repository.ReceiptTableRepository;
 import com.example.receipt.service.ReceiptAnalyzer;
@@ -36,7 +38,7 @@ public class ReceiptGameService {
     public MonsterResponse generate(String tableName, String apiKey, String imageUrl) { return generateInternal(tableName, apiKey, imageUrl, false); }
     public MonsterResponse generateLocal(String tableName, String apiKey) { return generateInternal(tableName, apiKey, null, true); }
     private MonsterResponse generateInternal(String tableName, String apiKey, String imageUrl, boolean includeImage) {
-        GameReceipt receipt=requireReceipt(tableName); GameMonster existing=games.findMonsterByReceipt(tableName); if(existing!=null&&existing.ready())return MonsterResponse.from(existing, imageUrl == null ? null : imageUrl+existing.monsterId()+"/image", includeImage);
+        GameReceipt receipt=requireReceipt(tableName); GameMonster existing=games.findMonsterByReceipt(tableName); if(existing!=null&&existing.ready()){try{byte[] normalized=GeminiMonsterImageGenerator.normalize(existing.image());games.markReady(existing.monsterId(),normalized,"image/jpeg");existing=games.findMonster(existing.monsterId());}catch(Exception e){throw new ReceiptException(HttpStatus.INTERNAL_SERVER_ERROR,"MONSTER_IMAGE_NORMALIZE_ERROR","モンスター画像の正規化に失敗しました。");}return MonsterResponse.from(existing,imageUrl == null ? null : imageUrl+existing.monsterId()+"/image",includeImage);}
         GameMonsterProfile profile=GameRules.profile(receipt.imageSha256(), new com.example.receipt.dto.ReceiptStructuredData(receipt.storeName(),null,receipt.storeCategory(),receipt.purchasedAt(),receipt.totalAmount(),null,null,receipt.safeItems()));
         OffsetDateTime now=OffsetDateTime.now(); boolean owner=games.reserveMonster(profile,tableName,now,now.minusMinutes(staleMinutes)); GameMonster reserved=games.findMonsterByReceipt(tableName); if(!owner) { if(reserved!=null&&reserved.ready())return MonsterResponse.from(reserved,imageUrl); if(reserved!=null&&"GENERATING".equals(reserved.generationStatus())) throw new com.example.receipt.exception.ReceiptException(HttpStatus.ACCEPTED,"MONSTER_GENERATING","モンスターを生成中です。しばらくしてから確認してください。"); }
         try { byte[] image=imageGenerator.generate(profile,apiKey); games.markReady(reserved.monsterId(),image,"image/jpeg"); return MonsterResponse.from(games.findMonster(reserved.monsterId()), imageUrl == null ? null : imageUrl+reserved.monsterId()+"/image", includeImage); } catch(RuntimeException e) { games.markFailed(reserved.monsterId()); throw e; }

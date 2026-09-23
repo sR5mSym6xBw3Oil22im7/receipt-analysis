@@ -100,7 +100,7 @@ mvn test
 
 `reFront/game.html` から利用できます。ゲームモードだけ1人最大10枚を受け付け、候補画像は1枚ずつゲーム専用APIへ送信します。既存の通常解析（ZIPを含む）の上限は変更していません。ゲーム候補は保存済みSHA-256を先に照合し、保存済みレシート／モンスターを再利用します。
 
-能力値・レアリティ・モンスター名・visual profileはBackendでSHA-256から決定的に生成します。モンスター画像は生成後に512x512 JPEG 1枚として `receipt_game_monster` へ保存し、画像生成プロンプトへ生のOCR、住所、電話番号、決済情報、ブランド文字を渡しません。
+能力値・レアリティ・モンスター名・visual profileはBackendでSHA-256から決定的に生成します。モンスター画像は生成後に16x16 JPEG 1枚として `receipt_game_monster` へ保存し、画像生成プロンプトへ生のOCR、住所、電話番号、決済情報、ブランド文字を渡しません。
 
 ローカルPostgreSQLは次で起動できます。Frontendは既存どおり `python3 -m http.server 5051 --directory ..`、Backendは `mvn spring-boot:run` です。
 
