@@ -12,6 +12,8 @@ import com.google.genai.types.Part;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -25,6 +27,7 @@ import java.util.Iterator;
 
 @Service
 public class GeminiMonsterImageGenerator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeminiMonsterImageGenerator.class);
     private final String model;
     private final int timeoutMs;
     public GeminiMonsterImageGenerator(@Value("${gemini.image-model:gemini-3.1-flash-image}") String model, @Value("${gemini.image-timeout-ms:180000}") int timeoutMs) { this.model=model; this.timeoutMs=timeoutMs; }
@@ -49,11 +52,14 @@ public class GeminiMonsterImageGenerator {
                 One monster only. Square composition. Game monster card illustration.
                 """.formatted(profile.species(), profile.rarity(), value(profile.visualProfileJson(), "mainColor"), value(profile.visualProfileJson(), "bodyShape"), value(profile.visualProfileJson(), "hornType"), value(profile.visualProfileJson(), "wingType"), value(profile.visualProfileJson(), "armorType"), value(profile.visualProfileJson(), "auraType"), value(profile.visualProfileJson(), "personality"), profile.visualProfileJson());
         try (Client client=Client.builder().apiKey(key).httpOptions(HttpOptions.builder().timeout(timeoutMs).build()).build()) {
-            GenerateContentConfig config=GenerateContentConfig.builder().candidateCount(1).responseModalities("IMAGE").imageConfig(ImageConfig.builder().aspectRatio("1:1").outputMimeType("image/jpeg").outputCompressionQuality(90).build()).build();
+            GenerateContentConfig config=GenerateContentConfig.builder().candidateCount(1).responseModalities("IMAGE").imageConfig(ImageConfig.builder().aspectRatio("1:1").build()).build();
             GenerateContentResponse response=client.models.generateContent(model, Content.fromParts(Part.fromText(prompt)), config);
-            for (Part part: response.parts()) { if (part.inlineData().isPresent() && part.inlineData().get().data().isPresent()) return normalize(part.inlineData().get().data().get()); }
+            for (Part part: response.parts()) {
+                if (part.thought().orElse(false)) continue;
+                if (part.inlineData().isPresent() && part.inlineData().get().data().isPresent()) return normalize(part.inlineData().get().data().get());
+            }
             throw new ReceiptException(HttpStatus.BAD_GATEWAY,"GEMINI_IMAGE_EMPTY","Geminiからモンスター画像を取得できませんでした。");
-        } catch (ReceiptException e) { throw e; } catch (ApiException e) { throw new ReceiptException(e.code()==429?HttpStatus.TOO_MANY_REQUESTS:HttpStatus.BAD_GATEWAY,"GEMINI_IMAGE_ERROR","Geminiのモンスター画像生成に失敗しました。モデルとAPIキーを確認してください。"); } catch (Exception e) { throw new ReceiptException(HttpStatus.BAD_GATEWAY,"GEMINI_IMAGE_ERROR","Geminiのモンスター画像生成に失敗しました。"); }
+        } catch (ReceiptException e) { throw e; } catch (ApiException e) { LOGGER.warn("Gemini image generation API failed: code={}, status={}, message={}", e.code(), e.status(), e.message()); throw new ReceiptException(e.code()==429?HttpStatus.TOO_MANY_REQUESTS:HttpStatus.BAD_GATEWAY,"GEMINI_IMAGE_ERROR","Geminiのモンスター画像生成に失敗しました。モデルとAPIキーを確認してください。"); } catch (Exception e) { LOGGER.warn("Gemini image generation failed", e); throw new ReceiptException(HttpStatus.BAD_GATEWAY,"GEMINI_IMAGE_ERROR","Geminiのモンスター画像生成に失敗しました。"); }
     }
     private static String value(String json,String key) { String marker="\""+key+"\":\""; int start=json.indexOf(marker); if(start<0)return "UNKNOWN"; start+=marker.length(); int end=json.indexOf('\"',start); return end<0?"UNKNOWN":json.substring(start,end); }
     static byte[] normalize(byte[] bytes) throws Exception {
