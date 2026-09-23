@@ -175,7 +175,14 @@ test("select page loads receipt list and detail bubble", () => {
 test("receipt game supports ten candidates, in-memory API keys, and room polling", () => {
   assert.match(index, /game\.html/);
   assert.match(game, /multiple/);
-  assert.match(game, /accept="image\/jpeg,image\/png"/);
+  assert.match(game, /accept="image\/jpeg,image\/png,\.zip,application\/zip"/);
+  assert.match(game, /JPEG\/PNG\/ZIPを選択（最大10枚）/);
+  assert.match(game, /id="game-detail-panel"/);
+  assert.match(game, /id="game-detail-bubble"/);
+  assert.match(gameJs, /textContent="参照"/);
+  assert.match(gameJs, /showGameDetail/);
+  assert.match(gameJs, /receiptGameFileUtils\.expandSelectedFile/);
+  assert.match(game, /game-file-utils\.js/);
   assert.match(gameJs, /files\.length>10/);
   assert.match(gameJs, /files\.some\(f=>f\.size>5242880\)/);
   assert.match(gameJs, /X-Receipt-Game-Token/);
