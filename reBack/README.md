@@ -25,7 +25,7 @@
 | `DB_USER` | DBユーザー | `postgres` |
 | `DB_PASSWORD` | DBパスワード | `postgres` |
 | `APP_FRONTEND_ORIGIN` | CORS許可Frontend Origin | `http://localhost:5051` |
-| `GEMINI_IMAGE_MODEL` | モンスター画像生成モデル | `gemini-3.1-flash-image` |
+| `GEMINI_IMAGE_MODEL` | モンスター画像生成モデル | `gemini-3.1-flash-lite-image` |
 | `FLYWAY_ENABLED` | Flyway実行 | `true` |
 | `FLYWAY_BASELINE_ON_MIGRATE` | 既存DBへの初回導入時だけ有効化 | `false` |
 

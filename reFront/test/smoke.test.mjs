@@ -172,7 +172,7 @@ test("select page loads receipt list and detail bubble", () => {
   assert.match(select, /チェックしたレシートを削除/);
 });
 
-test("receipt game supports ten candidates, in-memory API keys, and room polling", () => {
+test("receipt game supports ten candidates, clears API key state on quota errors, and room polling", () => {
   assert.match(index, /game\.html/);
   assert.match(game, /multiple/);
   assert.match(game, /accept="image\/jpeg,image\/png,\.zip,application\/zip"/);
@@ -187,5 +187,8 @@ test("receipt game supports ten candidates, in-memory API keys, and room polling
   assert.match(gameJs, /files\.some\(f=>f\.size>5242880\)/);
   assert.match(gameJs, /X-Receipt-Game-Token/);
   assert.match(gameJs, /setInterval\(async\(\)=>/);
-  assert.doesNotMatch(gameJs, /localStorage|sessionStorage/);
+  assert.match(gameJs, /clearStoredApiKeys/);
+  assert.match(gameJs, /status===429/);
+  assert.match(gameJs, /document\.cookie/);
+  assert.doesNotMatch(gameJs, /localStorage\.setItem|sessionStorage\.setItem/);
 });

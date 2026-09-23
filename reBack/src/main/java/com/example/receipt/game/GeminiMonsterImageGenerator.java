@@ -30,7 +30,7 @@ public class GeminiMonsterImageGenerator {
     private static final Logger LOGGER = LoggerFactory.getLogger(GeminiMonsterImageGenerator.class);
     private final String model;
     private final int timeoutMs;
-    public GeminiMonsterImageGenerator(@Value("${gemini.image-model:gemini-3.1-flash-image}") String model, @Value("${gemini.image-timeout-ms:180000}") int timeoutMs) { this.model=model; this.timeoutMs=timeoutMs; }
+    public GeminiMonsterImageGenerator(@Value("${gemini.image-model:gemini-3.1-flash-lite-image}") String model, @Value("${gemini.image-timeout-ms:180000}") int timeoutMs) { this.model=model; this.timeoutMs=timeoutMs; }
 
     public byte[] generate(GameMonsterProfile profile, String apiKey) {
         final String key;
