@@ -12,7 +12,6 @@ const selectJs = await readFile(new URL("../select.js", import.meta.url), "utf8"
 const config = await readFile(new URL("../config.js", import.meta.url), "utf8");
 const indexJs = await readFile(new URL("../index.js", import.meta.url), "utf8");
 const adminApi = await readFile(new URL("../admin-api.js", import.meta.url), "utf8");
-const login = await readFile(new URL("../login.html", import.meta.url), "utf8");
 const loginJs = await readFile(new URL("../login.js", import.meta.url), "utf8");
 
 test("frontend accepts JPEG, PNG, and ZIP", () => {
@@ -120,7 +119,7 @@ test("index links to demo, upload, and the saved-receipts login entry", () => {
   assert.match(index, /デモを試す/);
   assert.match(index, /APIキー不要/);
   assert.match(index, /href="\.\/upload\.html"/);
-  assert.match(index, /id="select-link"[^>]*href="\.\/login\.html"/);
+  assert.match(index, /id="select-link"[^>]*href="https:\/\/receipt-analysis-b8po\.onrender\.com\/admin\/login\.html"/);
   assert.match(index, /<script src="\.\/index\.js\?v=20260924-public-menu-routing"><\/script>/);
 });
 
@@ -153,7 +152,7 @@ test("public index links only saved receipts to Backend login", () => {
 test("admin pages use Backend session authentication and CSRF instead of Referrer guards", () => {
   assert.match(select, /<script src="\.\/admin-api\.js"><\/script>/);
   assert.match(html, /<script src="\.\/admin-api\.js"><\/script>/);
-  assert.doesNotMatch(select + html + login, /access-guard\.js|document\.referrer|history\.replaceState/);
+  assert.doesNotMatch(select + html, /access-guard\.js|document\.referrer|history\.replaceState/);
   assert.match(adminApi, /X-XSRF-TOKEN/);
   assert.match(adminApi, /credentials: "same-origin"/);
   assert.match(loginJs, /\/api\/auth\/login/);

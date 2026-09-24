@@ -10,7 +10,7 @@
 
 ## Backend管理画面
 
-ログイン、解析、保存、一覧、詳細、削除の画面はBackendから同一オリジンで配信されます。URLは `https://<backend-host>/admin/login.html` です。Frontendリポジトリ内の `upload.html`、`select.html`、`login.html` はBackendに配置する画面の編集元です。GitHub Pages上の公開画面から管理APIを呼び出しません。
+ログイン、解析、保存、一覧、詳細、削除の画面はBackendから同一オリジンで配信されます。URLは `https://<backend-host>/admin/login.html` です。Frontendリポジトリ内の `upload.html` と `select.html` はBackendに配置する画面の編集元です。ログイン画面HTMLは `reBack/src/main/resources/static/admin/login.html` を編集してください。GitHub Pages上の公開画面から管理APIを呼び出しません。
 
 認証はBackendセッションCookie、状態変更のCSRF対策は `X-XSRF-TOKEN` ヘッダーを使います。画面制御やReferrerを認証の代わりにしません。
 

@@ -104,6 +104,14 @@ button {
   cursor: pointer;
 }
 
+#login-form button {
+  background: #2563eb;
+  color: #fff;
+  transition: background-color 0.15s ease;
+}
+
+#login-form button:hover { background: #1d4ed8; }
+
 button:disabled { cursor: not-allowed; opacity: 0.65; }
 
 .secondary-button {
