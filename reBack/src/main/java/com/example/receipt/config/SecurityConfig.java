@@ -22,12 +22,6 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.CsrfFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.List;
-
 @Configuration
 public class SecurityConfig {
     @Bean
@@ -54,22 +48,8 @@ public class SecurityConfig {
     @Bean
     CookieCsrfTokenRepository csrfTokenRepository(@Value("${app.auth.cookie-secure:true}") boolean secure) {
         CookieCsrfTokenRepository repository = new CookieCsrfTokenRepository();
-        repository.setCookieCustomizer(cookie -> cookie.path("/").secure(secure).sameSite("None"));
+        repository.setCookieCustomizer(cookie -> cookie.path("/").secure(secure).sameSite("Lax"));
         return repository;
-    }
-
-    @Bean
-    CorsConfigurationSource corsConfigurationSource(
-            @Value("${app.auth.cors-allowed-origin}") String allowedOrigin) {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(allowedOrigin));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-XSRF-TOKEN"));
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
-        return source;
     }
 
     @Bean
@@ -80,16 +60,12 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                              CookieCsrfTokenRepository csrfRepository,
-                                             SecurityContextRepository contextRepository,
-                                             AdminAccessTokenService accessTokenService) throws Exception {
+                                             SecurityContextRepository contextRepository) throws Exception {
         http
-                .cors(cors -> {})
-                .addFilterBefore(new AdminBearerTokenFilter(accessTokenService), CsrfFilter.class)
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .requireCsrfProtectionMatcher(request -> {
                             if (!CsrfFilter.DEFAULT_CSRF_MATCHER.matches(request)) return false;
-                            if (request.getHeader("Authorization") != null) return false;
                             String path = request.getRequestURI();
                             if (path.equals("/api/receipts") || path.startsWith("/api/receipts/")) {
                                 Authentication current = SecurityContextHolder.getContext().getAuthentication();

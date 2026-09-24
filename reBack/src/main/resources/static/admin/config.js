@@ -10,6 +10,6 @@ const backendBaseUrl = isLocalFrontend
 window.APP_CONFIG = {
   API_BASE_URL: backendBaseUrl,
   ADMIN_BASE_URL: `${backendBaseUrl}/admin`,
-  SELECT_URL: "https://sr5msym6xbw3oil22im7.github.io/receipt-analysis/reFront/select.html",
+  SELECT_URL: `${backendBaseUrl}/admin/select.html`,
   PUBLIC_BASE_URL: "https://sr5msym6xbw3oil22im7.github.io/receipt-analysis/reFront/index.html"
 };

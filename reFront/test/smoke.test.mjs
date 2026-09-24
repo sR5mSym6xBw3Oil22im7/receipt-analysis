@@ -6,7 +6,7 @@ const html = await readFile(new URL("../../reBack/src/main/resources/static/admi
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const demo = await readFile(new URL("../demo.html", import.meta.url), "utf8");
 const demoJs = await readFile(new URL("../demo.js", import.meta.url), "utf8");
-const select = await readFile(new URL("../select.html", import.meta.url), "utf8");
+const select = await readFile(new URL("../../reBack/src/main/resources/static/admin/select.html", import.meta.url), "utf8");
 const js = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const selectJs = await readFile(new URL("../select.js", import.meta.url), "utf8");
 const config = await readFile(new URL("../config.js", import.meta.url), "utf8");
@@ -151,12 +151,13 @@ test("public index routes receipt analysis to Backend and saved receipts to logi
 });
 
 test("admin pages use Backend session authentication and CSRF instead of Referrer guards", () => {
-  assert.match(select, /<script src="\.\/admin-api\.js"><\/script>/);
+  assert.match(select, /<script src="\.\/admin-api\.js\?v=20260924-session-auth"><\/script>/);
   assert.match(html, /<script src="\.\/admin-api\.js"><\/script>/);
   assert.doesNotMatch(select + html, /access-guard\.js|document\.referrer|history\.replaceState/);
   assert.match(adminApi, /X-XSRF-TOKEN/);
   assert.match(adminApi, /credentials: "same-origin"/);
   assert.match(loginJs, /\/api\/auth\/login/);
+  assert.match(loginJs, /\/admin\/select\.html/);
   assert.doesNotMatch(loginJs, /edix/);
 });
 

@@ -9,7 +9,7 @@ server:
       cookie:
         http-only: true
         secure: ${SESSION_COOKIE_SECURE:true}
-        same-site: none
+        same-site: lax
 
 spring:
   datasource:
@@ -31,7 +31,6 @@ app:
     admin-username: ${ADMIN_USERNAME}
     admin-password-hash: ${ADMIN_PASSWORD_HASH}
     cookie-secure: ${SESSION_COOKIE_SECURE:true}
-    cors-allowed-origin: ${CORS_ALLOWED_ORIGIN:https://sr5msym6xbw3oil22im7.github.io}
 
 gemini:
   receipt-model: gemini-3.5-flash-lite
