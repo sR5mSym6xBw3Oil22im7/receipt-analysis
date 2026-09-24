@@ -15,11 +15,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -28,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@WithMockUser(username = "test-admin", roles = "ADMIN")
 class ReceiptControllerIntegrationTest {
     @Autowired
     MockMvc mockMvc;
@@ -53,6 +57,8 @@ class ReceiptControllerIntegrationTest {
         int before = receiptTableCount();
 
         mockMvc.perform(multipart("/api/receipts")
+                        .with(user("test-admin").roles("ADMIN"))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
                         .file(sampleFile())
                         .param("geminiApiKey", "web-key"))
                 .andExpect(status().isMethodNotAllowed());
@@ -66,6 +72,8 @@ class ReceiptControllerIntegrationTest {
         int before = receiptTableCount();
 
         mockMvc.perform(multipart("/api/receipts/analyze")
+                        .with(user("test-admin").roles("ADMIN"))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
                         .file(sampleFile())
                         .param("geminiApiKey", "web-key"))
                 .andExpect(status().isOk())
@@ -79,6 +87,8 @@ class ReceiptControllerIntegrationTest {
         MockMultipartFile file = sampleFile();
 
         mockMvc.perform(multipart("/api/receipts/analyze")
+                        .with(user("test-admin").roles("ADMIN"))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
                         .file(file)
                         .param("geminiApiKey", "web-key-2"))
                 .andExpect(status().isOk());
@@ -89,6 +99,8 @@ class ReceiptControllerIntegrationTest {
     @Test
     void analyzeReturnsAndStoresImageSha256() throws Exception {
         mockMvc.perform(multipart("/api/receipts/analyze")
+                        .with(user("test-admin").roles("ADMIN"))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
                         .file(sampleFile())
                         .param("geminiApiKey", "web-key"))
                 .andExpect(status().isOk())
@@ -104,11 +116,15 @@ class ReceiptControllerIntegrationTest {
     @Test
     void analyzeAllowsAnImageHashThatWasAnalyzedButNotSaved() throws Exception {
         mockMvc.perform(multipart("/api/receipts/analyze")
+                        .with(user("test-admin").roles("ADMIN"))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
                         .file(sampleFile())
                         .param("geminiApiKey", "web-key"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(multipart("/api/receipts/analyze")
+                        .with(user("test-admin").roles("ADMIN"))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
                         .file(sampleFile())
                         .param("geminiApiKey", "web-key"))
                 .andExpect(status().isOk());
@@ -118,7 +134,10 @@ class ReceiptControllerIntegrationTest {
     void analyzeRequiresWebApiKey() throws Exception {
         MockMultipartFile file = sampleFile();
 
-        mockMvc.perform(multipart("/api/receipts/analyze").file(file))
+        mockMvc.perform(multipart("/api/receipts/analyze")
+                        .with(user("test-admin").roles("ADMIN"))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .file(file))
                 .andExpect(status().isBadRequest());
     }
 

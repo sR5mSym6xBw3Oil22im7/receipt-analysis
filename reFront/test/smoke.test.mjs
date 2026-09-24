@@ -11,7 +11,9 @@ const js = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const selectJs = await readFile(new URL("../select.js", import.meta.url), "utf8");
 const config = await readFile(new URL("../config.js", import.meta.url), "utf8");
 const indexJs = await readFile(new URL("../index.js", import.meta.url), "utf8");
-const accessGuard = await readFile(new URL("../access-guard.js", import.meta.url), "utf8");
+const adminApi = await readFile(new URL("../admin-api.js", import.meta.url), "utf8");
+const login = await readFile(new URL("../login.html", import.meta.url), "utf8");
+const loginJs = await readFile(new URL("../login.js", import.meta.url), "utf8");
 
 test("frontend accepts JPEG, PNG, and ZIP", () => {
   assert.match(html, /accept="image\/jpeg,image\/png,\.zip,application\/zip"/);
@@ -138,21 +140,21 @@ test("demo uses fixed frontend data without API or database calls", () => {
   assert.doesNotMatch(demoJs, /localStorage|sessionStorage/);
 });
 
-test("index hides the select link when PostgreSQL has no receipts", () => {
-  assert.match(indexJs, /STARTUP_CHECK_TIMEOUT_MS = 120000/);
-  assert.match(indexJs, /signal: controller\.signal/);
-  assert.match(indexJs, /fetch\(`\$\{API_BASE_URL\}\/api\/receipts`/);
-  assert.match(indexJs, /selectLink\.classList\.add\("hidden"\)/);
-  assert.match(indexJs, /Array\.isArray\(receipts\)/);
-  assert.match(indexJs, /selectLink\.classList\.toggle\("hidden", receipts\.length === 0\)/);
+test("public index does not query protected receipt APIs and links to Backend admin pages", () => {
+  assert.doesNotMatch(indexJs, /fetch\s*\(/);
+  assert.doesNotMatch(indexJs, /api\/receipts/);
+  assert.match(indexJs, /ADMIN_BASE_URL/);
+  assert.match(indexJs, /admin-upload-link/);
 });
 
-test("non-index pages redirect direct access to the index page", () => {
-  assert.match(select, /<script src="\.\/access-guard\.js"><\/script>/);
-  assert.match(html, /<script src="\.\/access-guard\.js"><\/script>/);
-  assert.match(accessGuard, /document\.referrer/);
-  assert.match(accessGuard, /referrerUrl\.pathname === indexUrl\.pathname/);
-  assert.match(accessGuard, /window\.location\.replace\(indexUrl\.href\)/);
+test("admin pages use Backend session authentication and CSRF instead of Referrer guards", () => {
+  assert.match(select, /<script src="\.\/admin-api\.js"><\/script>/);
+  assert.match(html, /<script src="\.\/admin-api\.js"><\/script>/);
+  assert.doesNotMatch(select + html + login, /access-guard\.js|document\.referrer|history\.replaceState/);
+  assert.match(adminApi, /X-XSRF-TOKEN/);
+  assert.match(adminApi, /credentials: "same-origin"/);
+  assert.match(loginJs, /\/api\/auth\/login/);
+  assert.doesNotMatch(loginJs, /edix/);
 });
 
 test("select page loads receipt list and detail bubble", () => {

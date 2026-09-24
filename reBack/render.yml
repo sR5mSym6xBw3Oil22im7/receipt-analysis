@@ -10,8 +10,12 @@ services:
     plan: free
     healthCheckPath: /api/health
     envVars:
-      - key: APP_FRONTEND_ORIGIN
-        value: https://sr5msym6xbw3oil22im7.github.io
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
       - key: DB_HOST
         fromDatabase:
           name: receipt-analysis-psl-service

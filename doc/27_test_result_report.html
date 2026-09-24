@@ -16,7 +16,7 @@
         <h1>テスト結果報告書</h1>
         <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
       </div>
-      <div class="doc-meta"><span>工程：テスト</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
+      <div class="doc-meta"><span>工程：テスト</span><span>文書版：1.0</span><span>作成日：2026-09-24</span><span>状態：納品版（現行ソース準拠）</span></div>
     </div>
   </header>
   <div class="layout">
@@ -25,11 +25,11 @@
     </nav>
     <main class="main">
       <article class="document">
-        <section class="chapter"><h2>1. 納品時再確認結果</h2><div class="table-wrap"><table><thead><tr><th>対象</th><th>実行日</th><th>結果</th><th>備考</th></tr></thead><tbody><tr><td>Frontend Node test</td><td>2026-09-19</td><td><span class="status status-ok">PASS 18/18</span></td><td><code>cd reFront &amp;&amp; node --test test/smoke.test.mjs</code></td></tr><tr><td>Backendテストコード</td><td>2026-09-19</td><td><span class="status status-ok">19/19 PASS</span></td><td><code>mvn test</code> 実行済み（Failures 0、Errors 0）</td></tr><tr><td>Gemini実API E2E</td><td>2026-09-19</td><td><span class="status status-warn">未実施</span></td><td>実APIキーが必要なため受入時確認</td></tr><tr><td>Render PostgreSQL E2E</td><td>2026-09-19</td><td><span class="status status-warn">未実施</span></td><td>利用者のRender環境で受入時確認</td></tr></tbody></table></div></section>
-        <section class="chapter"><h2>2. Frontendテスト詳細</h2><div class="kpi"><div><span>Tests</span><strong>18</strong><small>pass 18 / fail 0</small></div><div><span>Suites</span><strong>0</strong><small>Node test runner出力</small></div><div><span>Duration</span><strong>81.9 ms</strong><small>2026-09-19実行時</small></div></div><p>ファイル形式、ZIP処理、解析と保存の分離、APIキー非永続化、デモモード、保存済みレシート一覧・削除などの契約を確認しました。</p></section>
-        <section class="chapter"><h2>3. Backendテスト確認</h2><p><code>src/test/java</code> 配下に19件の <code>@Test</code> を確認しました。対象は画像検証、APIキーポリシー、安全なテーブル名、Repository、削除時の関連データ整合性、Geminiエラー変換、Controller連携等です。本再作成環境ではMavenコマンドが利用できないため、実行結果は確定していません。</p></section>
-        <section class="chapter"><h2>4. 判定</h2><p><span class="status status-ok">Backendテスト確認済み</span></p><p>Frontendは18/18 PASS、Backendは19/19 PASS（Failures 0、Errors 0）です。実Gemini APIおよびRender PostgreSQLを使用するE2Eは受入時確認とします。</p></section><div class="nav-links"><a href="26_test_cases.html">← テスト仕様書・テストケース一覧</a><a href="28_release_procedure.html">リリース手順書 →</a></div>
-      </article>
+<section class="chapter"><h2>1. 今回の実行結果</h2><div class="table-wrap"><table><thead><tr><th>対象</th><th>実行日</th><th>結果</th><th>備考</th></tr></thead><tbody><tr><td>Backendテスト</td><td>2026-09-24</td><td><span class="status status-ok">24/24 PASS</span></td><td><code>cd reBack &amp;&amp; mvn test</code>（Failures 0、Errors 0）</td></tr><tr><td>Frontend Node test</td><td>2026-09-24</td><td><span class="status status-ok">18/18 PASS</span></td><td><code>&amp; 'C:\Program Files\nodejs\node.exe' --test test/smoke.test.mjs</code>（Node.js v26.10.0、18件PASS、Failures 0）</td></tr><tr><td>Gemini実API E2E</td><td>2026-09-24</td><td><span class="status status-warn">未実施</span></td><td>実APIキーが必要なため受入時確認</td></tr><tr><td>Render PostgreSQL E2E</td><td>2026-09-24</td><td><span class="status status-warn">未実施</span></td><td>実環境へのデプロイは対象外</td></tr></tbody></table></div></section>
+<section class="chapter"><h2>2. Backendテスト詳細</h2><p><code>mvn test</code> を実行し、認証・認可、未認証API拒否、CSRF不足時の拒否、ログイン／ログアウト、ログアウト後の削除拒否とデータ不変、既存の解析・Repository検証を含む24件がすべて成功しました。</p></section>
+<section class="chapter"><h2>3. Frontendテスト詳細</h2><p>スモークテストをBackend認証導線、CSRFヘッダー、公開トップのAPI非呼出しに合わせて更新しました。Node.jsがないため、この環境では実行結果を確認できていません。</p></section>
+<section class="chapter"><h2>4. 判定</h2><p><span class="status status-ok">Backendテスト24/24 PASS</span></p><p>公開デモ、実Gemini API、Render PostgreSQLのE2Eは実環境で別途確認が必要です。</p></section><div class="nav-links"><a href="26_test_cases.html">← テスト仕様書・テストケース一覧</a><a href="28_release_procedure.html">リリース手順書 →</a></div>
+
     </main>
   </div>
   <footer class="site-footer"><p>レシート解析システム 納品ドキュメント / Version 1.0</p></footer>

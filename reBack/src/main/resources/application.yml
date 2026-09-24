@@ -5,6 +5,11 @@ server:
       charset: UTF-8
       enabled: true
       force: true
+    session:
+      cookie:
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: lax
 
 spring:
   datasource:
@@ -21,8 +26,11 @@ spring:
       query-timeout: 20s
 
 app:
-  frontend-origin: ${APP_FRONTEND_ORIGIN:http://localhost:5051}
   max-upload-bytes: 5242880
+  auth:
+    admin-username: ${ADMIN_USERNAME}
+    admin-password-hash: ${ADMIN_PASSWORD_HASH}
+    cookie-secure: ${SESSION_COOKIE_SECURE:true}
 
 gemini:
   receipt-model: gemini-3.5-flash-lite
