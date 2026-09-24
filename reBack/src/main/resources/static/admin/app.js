@@ -269,7 +269,7 @@ async function fetchSaveApi(url, options) {
   const timeoutId = setTimeout(() => controller.abort(), SAVE_REQUEST_TIMEOUT_MS);
 
   try {
-    return await adminFetch(url, { ...options, signal: controller.signal });
+    return await fetch(url, { ...options, credentials: "omit", signal: controller.signal });
   } catch (error) {
     if (error?.name === "AbortError") {
       const timeoutError = new Error(
