@@ -21,6 +21,11 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -48,8 +53,22 @@ public class SecurityConfig {
     @Bean
     CookieCsrfTokenRepository csrfTokenRepository(@Value("${app.auth.cookie-secure:true}") boolean secure) {
         CookieCsrfTokenRepository repository = new CookieCsrfTokenRepository();
-        repository.setCookieCustomizer(cookie -> cookie.path("/").secure(secure).sameSite("Lax"));
+        repository.setCookieCustomizer(cookie -> cookie.path("/").secure(secure).sameSite("None"));
         return repository;
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.auth.cors-allowed-origin}") String allowedOrigin) {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(allowedOrigin));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
     }
 
     @Bean
@@ -62,6 +81,7 @@ public class SecurityConfig {
                                              CookieCsrfTokenRepository csrfRepository,
                                              SecurityContextRepository contextRepository) throws Exception {
         http
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .requireCsrfProtectionMatcher(request -> {

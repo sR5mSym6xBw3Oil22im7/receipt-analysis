@@ -14,7 +14,8 @@ form.addEventListener("submit", async (event) => {
       status.textContent = response.status === 401 ? "ユーザーIDまたはパスワードが正しくありません。" : `ログインできませんでした (HTTP ${response.status})`;
       return;
     }
-    window.location.assign("/admin/select.html");
+    window.location.assign(window.APP_CONFIG?.SELECT_URL
+      ?? "https://sr5msym6xbw3oil22im7.github.io/receipt-analysis/reFront/select.html");
   } catch {
     status.textContent = "Backendに接続できませんでした。";
   }
