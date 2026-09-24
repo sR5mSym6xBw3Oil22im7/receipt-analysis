@@ -130,9 +130,10 @@ async function analyzeReceipt(formData, fileNumber) {
   const timeoutId = setTimeout(() => controller.abort(), ANALYZE_REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await adminFetch(`${API_BASE_URL}/api/receipts/analyze`, {
+    const response = await fetch(`${API_BASE_URL}/api/receipts/analyze`, {
       method: "POST",
       body: formData,
+      credentials: "omit",
       signal: controller.signal
     });
     const body = await response.json().catch((error) => {
