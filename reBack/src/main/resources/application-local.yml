@@ -5,3 +5,13 @@ logging:
     rollingpolicy:
       file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.zip"
 
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+
+app:
+  auth:
+    cookie-secure: false
+

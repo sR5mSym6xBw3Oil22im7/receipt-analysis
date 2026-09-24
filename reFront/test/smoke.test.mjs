@@ -2,18 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const html = await readFile(new URL("../upload.html", import.meta.url), "utf8");
+const html = await readFile(new URL("../../reBack/src/main/resources/static/admin/upload.html", import.meta.url), "utf8");
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const demo = await readFile(new URL("../demo.html", import.meta.url), "utf8");
 const demoJs = await readFile(new URL("../demo.js", import.meta.url), "utf8");
-const select = await readFile(new URL("../select.html", import.meta.url), "utf8");
+const select = await readFile(new URL("../../reBack/src/main/resources/static/admin/select.html", import.meta.url), "utf8");
 const js = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const selectJs = await readFile(new URL("../select.js", import.meta.url), "utf8");
 const config = await readFile(new URL("../config.js", import.meta.url), "utf8");
 const indexJs = await readFile(new URL("../index.js", import.meta.url), "utf8");
-const accessGuard = await readFile(new URL("../access-guard.js", import.meta.url), "utf8");
-const game = await readFile(new URL("../game.html", import.meta.url), "utf8");
-const gameJs = await readFile(new URL("../game.js", import.meta.url), "utf8");
+const adminApi = await readFile(new URL("../admin-api.js", import.meta.url), "utf8");
+const loginJs = await readFile(new URL("../login.js", import.meta.url), "utf8");
 
 test("frontend accepts JPEG, PNG, and ZIP", () => {
   assert.match(html, /accept="image\/jpeg,image\/png,\.zip,application\/zip"/);
@@ -120,8 +119,8 @@ test("index links to demo, upload, and the saved-receipts login entry", () => {
   assert.match(index, /デモを試す/);
   assert.match(index, /APIキー不要/);
   assert.match(index, /href="\.\/upload\.html"/);
-  assert.match(index, /id="select-link"[^>]*href="\.\/login\.html"/);
-  assert.match(index, /<script src="\.\/index\.js"><\/script>/);
+  assert.match(index, /id="select-link"[^>]*href="https:\/\/receipt-analysis-b8po\.onrender\.com\/admin\/login\.html"/);
+  assert.match(index, /<script src="\.\/index\.js\?v=20260924-public-menu-routing"><\/script>/);
 });
 
 test("demo uses fixed frontend data without API or database calls", () => {
@@ -140,21 +139,29 @@ test("demo uses fixed frontend data without API or database calls", () => {
   assert.doesNotMatch(demoJs, /localStorage|sessionStorage/);
 });
 
-test("index hides the select link when PostgreSQL has no receipts", () => {
-  assert.match(indexJs, /STARTUP_CHECK_TIMEOUT_MS = 120000/);
-  assert.match(indexJs, /signal: controller\.signal/);
-  assert.match(indexJs, /fetch\(`\$\{API_BASE_URL\}\/api\/receipts`/);
-  assert.match(indexJs, /selectLink\.classList\.add\("hidden"\)/);
-  assert.match(indexJs, /Array\.isArray\(receipts\)/);
-  assert.match(indexJs, /selectLink\.classList\.toggle\("hidden", receipts\.length === 0\)/);
+test("public index routes receipt analysis to Backend and saved receipts to login", () => {
+  assert.doesNotMatch(indexJs, /fetch\s*\(/);
+  assert.doesNotMatch(indexJs, /api\/receipts/);
+  assert.match(indexJs, /ADMIN_BASE_URL/);
+  assert.match(indexJs, /admin-upload-link/);
+  assert.match(indexJs, /login\.html\?returnTo=upload/);
+  assert.match(indexJs, /upload\.html/);
+  assert.match(indexJs, /select-link/);
+  assert.match(indexJs, /login\.html/);
+  assert.match(index, /保存済みレシートを確認する/);
 });
 
-test("non-index pages redirect direct access to the index page", () => {
-  assert.match(select, /<script src="\.\/access-guard\.js"><\/script>/);
-  assert.match(html, /<script src="\.\/access-guard\.js"><\/script>/);
-  assert.match(accessGuard, /document\.referrer/);
-  assert.match(accessGuard, /referrerUrl\.pathname === indexUrl\.pathname/);
-  assert.match(accessGuard, /window\.location\.replace\(indexUrl\.href\)/);
+test("admin pages use Backend session authentication and CSRF instead of Referrer guards", () => {
+  assert.match(select, /<script src="\.\/admin-api\.js\?v=20260924-session-auth"><\/script>/);
+  assert.match(html, /<script src="\.\/admin-api\.js"><\/script>/);
+  assert.doesNotMatch(select + html, /access-guard\.js|document\.referrer|history\.replaceState/);
+  assert.match(adminApi, /X-XSRF-TOKEN/);
+  assert.match(adminApi, /credentials: "same-origin"/);
+  assert.match(loginJs, /\/api\/auth\/login/);
+  assert.match(loginJs, /returnTo === "upload"/);
+  assert.match(loginJs, /\/admin\/upload\.html/);
+  assert.match(loginJs, /\/admin\/select\.html/);
+  assert.doesNotMatch(loginJs, /edix/);
 });
 
 test("select page loads receipt list and detail bubble", () => {
@@ -170,28 +177,4 @@ test("select page loads receipt list and detail bubble", () => {
   assert.match(selectJs, /selectedTableNames/);
   assert.match(selectJs, /receiptCount/);
   assert.match(select, /チェックしたレシートを削除/);
-});
-
-test("receipt game supports ten candidates, clears API key state on quota errors, and room polling", () => {
-  assert.match(index, /game\.html/);
-  assert.match(game, /multiple/);
-  assert.match(game, /accept="image\/jpeg,image\/png,\.zip,application\/zip"/);
-  assert.match(game, /JPEG\/PNG\/ZIPを選択（最大10枚）/);
-  assert.match(game, /id="game-detail-panel"/);
-  assert.match(game, /id="game-detail-bubble"/);
-  assert.match(gameJs, /textContent="参照"/);
-  assert.match(gameJs, /showGameDetail/);
-  assert.match(gameJs, /receiptGameFileUtils\.expandSelectedFile/);
-  assert.match(game, /game-file-utils\.js/);
-  assert.match(gameJs, /files\.length>10/);
-  assert.match(gameJs, /files\.some\(f=>f\.size>5242880\)/);
-  assert.match(gameJs, /X-Receipt-Game-Token/);
-  assert.match(gameJs, /setInterval\(async\(\)=>/);
-  assert.match(gameJs, /clearStoredApiKeys/);
-  assert.match(gameJs, /status===429/);
-  assert.match(gameJs, /document\.cookie/);
-  assert.match(gameJs, /const geminiApiKey=document\.getElementById\("game-api-key"\)\.value\.trim\(\)/);
-  assert.match(gameJs, /new URLSearchParams\(\{geminiApiKey\}\)/);
-  assert.match(game, /game\.js\?v=receipt-game-api-key-reset-v2/);
-  assert.doesNotMatch(gameJs, /localStorage\.setItem|sessionStorage\.setItem/);
 });

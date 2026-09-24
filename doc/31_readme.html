@@ -39,7 +39,7 @@ node --test test/smoke.test.mjs
 cd ../reBack
 mvn test</code></pre><p>2026-09-19の再作成時点でFrontendは18/18 PASSです。Backendはテストコード19件を確認していますが、この環境ではMavenがないため再実行していません。</p></section>
         <section class="chapter"><h2>6. 主要API</h2><div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>用途</th></tr></thead><tbody><tr><td>GET</td><td>/api/health</td><td>稼働確認</td></tr><tr><td>GET</td><td>/api/receipts</td><td>一覧</td></tr><tr><td>GET</td><td>/api/receipts/{tableName}</td><td>詳細</td></tr><tr><td>POST</td><td>/api/receipts/analyze</td><td>画像解析</td></tr><tr><td>POST</td><td>/api/receipts/save</td><td>保存</td></tr><tr><td>DELETE</td><td>/api/receipts/{tableName}</td><td>原文と関連データ削除</td></tr></tbody></table></div></section>
-        <section class="chapter"><h2>7. 簡易ログインUIについて</h2><p><code>login.html</code> は保存済み一覧へ進むためのデモ向けUIで、Frontend内の固定値判定です。認証・認可機能としては使用しません。</p></section>
+        <section class="chapter"><h2>7. 管理画面認証</h2><p>管理画面はBackendがセッションCookieと環境設定したBCrypt管理者認証情報で保護します。状態変更要求にはCSRFトークンが必要です。</p></section>
         <div class="nav-links"><a href="30_data_retention_policy.html">← データ保持・削除方針書</a><a href="32_portfolio_description.html">ポートフォリオ説明資料 →</a></div>
       </article>
     </main>

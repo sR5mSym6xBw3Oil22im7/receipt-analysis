@@ -30,14 +30,16 @@ export DB_PORT=5432
 export DB_NAME=receipt_db
 export DB_USER=postgres
 export DB_PASSWORD=your_password
-export APP_FRONTEND_ORIGIN=http://localhost:5051
+export ADMIN_USERNAME=your_admin_id
+export ADMIN_PASSWORD_HASH=your_bcrypt_hash
+export SESSION_COOKIE_SECURE=false
 
 cd reBack
 mvn spring-boot:run
 
 # another terminal
 cd reFront
-python3 -m http.server 5051</code></pre></section><section class="chapter"><h2>4. 本番設定</h2><p>Frontendの <code>config.js</code> はlocalhost/file以外では <code>https://receipt-analysis-b8po.onrender.com</code> を使用します。Render側のBlueprintは <code>reBack/render.yml</code> でWeb ServiceとPostgreSQLを定義します。</p></section><div class="nav-links"><a href="20_error_message_list.html">← エラー処理・メッセージ一覧</a><a href="22_environment_variables.html">環境変数一覧 →</a></div>
+python3 -m http.server 5051</code></pre></section><section class="chapter"><h2>4. 本番設定</h2><p>GitHub Pagesの公開画面はデモを表示し、管理画面リンクをBackendの <code>/admin/login.html</code> へ接続します。管理画面/API通信はBackendと同一Originです。Render側のBlueprintは <code>reBack/render.yml</code> でWeb ServiceとPostgreSQLを定義します。</p></section><div class="nav-links"><a href="20_error_message_list.html">← エラー処理・メッセージ一覧</a><a href="22_environment_variables.html">環境変数一覧 →</a></div>
       </article>
     </main>
   </div>

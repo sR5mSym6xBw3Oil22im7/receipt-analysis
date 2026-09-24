@@ -52,14 +52,14 @@
 │ 解析結果                           │
 │ レシート画像1 / &lt;抽出行テキスト&gt;   │
 └──────────────────────────────────┘</code></pre></section>
-        <section class="chapter"><h2>4. SCR-04 簡易ログイン</h2><pre><code>← メニューへ戻る
+        <section class="chapter"><h2>4. SCR-04 管理者ログイン</h2><pre><code>← メニューへ戻る
 ┌──────────────────────────────────┐
 │ ログイン                           │
 │ ユーザID   [              ]       │
 │ パスワード [              ]       │
 │ [ログイン]                        │
 │ status                             │
-└──────────────────────────────────┘</code></pre><div class="callout warning">固定値判定をFrontend内で行う簡易UIです。認証済みセッション、Backend照合、権限制御は行いません。</div></section>
+└──────────────────────────────────┘</code></pre><div class="callout warning">Backendセッション認証を行う管理者ログイン画面です。ユーザーIDとパスワードハッシュはサーバー環境変数で管理します。</div></section>
         <section class="chapter"><h2>5. SCR-05 保存済み一覧・詳細</h2><pre><code>← メニューへ戻る
 ┌──────────────────────────────────┐
 │ 保存済みレシート一覧               │

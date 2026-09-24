@@ -1,34 +1,9 @@
-const selectLink = document.getElementById("select-link");
-const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
-const STARTUP_CHECK_TIMEOUT_MS = 120000;
-
-selectLink.classList.add("hidden");
-
-async function updateSelectLinkVisibility() {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), STARTUP_CHECK_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/receipts`, {
-      cache: "no-store",
-      signal: controller.signal
-    });
-    if (!response.ok) {
-      selectLink.classList.remove("hidden");
-      return;
-    }
-
-    const receipts = await response.json();
-    if (Array.isArray(receipts)) {
-      selectLink.classList.toggle("hidden", receipts.length === 0);
-    } else {
-      selectLink.classList.remove("hidden");
-    }
-  } catch {
-    selectLink.classList.remove("hidden");
-  } finally {
-    clearTimeout(timeoutId);
-  }
+const uploadLink = document.querySelector(".admin-upload-link");
+if (uploadLink && window.APP_CONFIG?.ADMIN_BASE_URL) {
+  uploadLink.href = `${window.APP_CONFIG.ADMIN_BASE_URL}/login.html?returnTo=upload`;
 }
 
-updateSelectLinkVisibility();
+const adminLink = document.getElementById("select-link");
+if (adminLink && window.APP_CONFIG?.ADMIN_BASE_URL) {
+  adminLink.href = `${window.APP_CONFIG.ADMIN_BASE_URL}/login.html`;
+}

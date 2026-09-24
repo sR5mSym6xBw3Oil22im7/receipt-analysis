@@ -26,7 +26,7 @@
     <main class="main">
       <article class="document">
 <section class="chapter"><h2>1. 目的</h2><p>紙・画像レシートの内容を手入力する負担を減らし、AI解析結果を確認してからPostgreSQLへ保存できる仕組みを提供します。ポートフォリオ閲覧者向けには、APIキーなしで操作感を確認できるデモモードも提供します。</p></section>
-        <section class="chapter"><h2>2. 利用者と前提</h2><ul><li>利用者はPCまたはスマートフォンのモダンブラウザを使用する</li><li>実Gemini解析を行う場合は利用者がGemini APIキーを用意する</li><li>デモモードはAPIキー不要で、Frontendだけで完結する</li><li>FrontendはGitHub Pages、BackendとPostgreSQLはRenderでの公開を想定する</li><li>保存済み画面前に簡易ログインUIがあるが、認証・認可は対象外とする</li></ul></section>
+        <section class="chapter"><h2>2. 利用者と前提</h2><ul><li>利用者はPCまたはスマートフォンのモダンブラウザを使用する</li><li>実Gemini解析を行う場合は利用者がGemini APIキーを用意する</li><li>デモモードはAPIキー不要で、Frontendだけで完結する</li><li>FrontendはGitHub Pages、BackendとPostgreSQLはRenderでの公開を想定する</li><li>保存済み画面と管理APIはBackendの管理者認証・認可で保護する</li></ul></section>
         <section class="chapter"><h2>3. 機能要件</h2><div class="table-wrap"><table><thead><tr><th>ID</th><th>要件</th><th>受入条件</th><th>状態</th></tr></thead><tbody>
 <tr><td>FR-01</td><td>メニュー表示</td><td>デモ、解析、保存済みレシートへの導線を提供する</td><td>実装済</td></tr>
 <tr><td>FR-02</td><td>デモ</td><td>APIキー・外部通信なしでサンプルレシートと固定解析結果を表示する</td><td>実装済</td></tr>
@@ -38,7 +38,7 @@
 <tr><td>FR-08</td><td>解析結果確認</td><td>保存前に行テキストを画面表示する</td><td>実装済</td></tr>
 <tr><td>FR-09</td><td>保存</td><td>明示操作で原文行と構造化データをPostgreSQLへ保存する</td><td>実装済</td></tr>
 <tr><td>FR-10</td><td>重複防止</td><td>保存済みSHA-256は409で拒否する</td><td>実装済</td></tr>
-<tr><td>FR-11</td><td>簡易ログインUI</td><td>保存済み画面へ進む前に固定値判定の入力画面を表示する</td><td>実装済（認証ではない）</td></tr>
+<tr><td>FR-11</td><td>管理者認証</td><td>Backendセッションと環境設定したBCrypt認証情報で管理画面を保護する</td><td>実装済</td></tr>
 <tr><td>FR-12</td><td>一覧・詳細</td><td>保存済みレシートの一覧と原文行を表示する</td><td>実装済</td></tr>
 <tr><td>FR-13</td><td>削除</td><td>選択レシートの原文、構造化サマリー、商品明細、ハッシュ情報を削除する</td><td>実装済</td></tr>
 <tr><td>FR-14</td><td>ヘルスチェック</td><td><code>/api/health</code> を提供する</td><td>実装済</td></tr>

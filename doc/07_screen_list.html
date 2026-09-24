@@ -26,11 +26,11 @@
     <main class="main">
       <article class="document">
 <section class="chapter"><h2>1. 画面一覧</h2><div class="table-wrap"><table><thead><tr><th>画面ID</th><th>画面名</th><th>ファイル</th><th>主機能</th><th>備考</th></tr></thead><tbody>
-<tr><td>SCR-01</td><td>メニュー</td><td>reFront/index.html</td><td>デモ／解析／保存済みレシートへの入口</td><td>保存件数0件時は保存済み導線を非表示</td></tr>
+<tr><td>SCR-01</td><td>メニュー</td><td>reFront/index.html</td><td>デモ／Backend管理画面への入口</td><td>保存件数APIの呼び出しなし</td></tr>
 <tr><td>SCR-02</td><td>デモ</td><td>reFront/demo.html</td><td>サンプル画像、固定解析結果表示</td><td>APIキー・Backend不要</td></tr>
-<tr><td>SCR-03</td><td>レシート解析</td><td>reFront/upload.html</td><td>画像/ZIP、APIキー、解析、保存</td><td>メニュー経由アクセスを前提</td></tr>
-<tr><td>SCR-04</td><td>簡易ログイン</td><td>reFront/login.html</td><td>固定ユーザーID／パスワード判定</td><td>認証・認可ではない</td></tr>
-<tr><td>SCR-05</td><td>保存済みレシート一覧・詳細</td><td>reFront/select.html</td><td>一覧、詳細、複数選択削除</td><td>詳細は同一画面内パネル</td></tr>
+<tr><td>SCR-03</td><td>レシート解析</td><td>/admin/upload.html</td><td>画像/ZIP、APIキー、解析、保存</td><td>Backendログイン必須</td></tr>
+<tr><td>SCR-04</td><td>管理者ログイン</td><td>/admin/login.html</td><td>Backendで管理者認証</td><td>BCrypt・セッション・CSRF</td></tr>
+<tr><td>SCR-05</td><td>保存済みレシート一覧・詳細</td><td>/admin/select.html</td><td>一覧、詳細、複数選択削除</td><td>Backendログイン必須</td></tr>
 <tr><td>RED-01</td><td>ルートリダイレクト</td><td>/index.html</td><td>reFront/index.htmlへ転送</td><td>ユーザー画面ではない</td></tr>
 <tr><td>RED-02</td><td>Backendルートリダイレクト</td><td>reBack/index.html</td><td>../reFront/index.htmlへ転送</td><td>開発補助</td></tr>
 </tbody></table></div></section>

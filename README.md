@@ -1,107 +1,66 @@
-# レシート解析システム
+# Receipt Analysis
 
-レシート画像をGoogle Gemini APIで解析し、抽出した印字行と構造化データをPostgreSQLへ保存・参照・削除できるWebアプリケーションです。Frontendは静的HTML/CSS/JavaScript、BackendはJava 21 / Spring Boot 4.1.0で構成しています。
+レシート画像をGemini APIで解析し、管理者が解析結果をPostgreSQLへ保存・閲覧・削除するWebアプリです。公開デモはFrontend内のサンプルデータだけで動作し、Backend、Gemini API、データベースへ接続しません。
 
-## ディレクトリ構成
+## 構成
 
-- `reFront/` : GitHub Pages向けFrontend
-- `reBack/` : Render向けSpring Boot Backend
-- `doc/` : 要件定義、設計、テスト、リリース、運用・引継ぎをまとめたHTML文書
-- `index.html` : `reFront/index.html` への入口
+- `reFront/`: 公開トップ画面とAPIキー不要のデモ。GitHub Pagesで公開します。
+- `reBack/`: Spring Boot APIと同一オリジンの管理画面。Renderで公開します。
+- `doc/`: 要件、設計、運用、テストに関するHTML文書。
 
-## 主な機能
+## 認証とURL
 
-- APIキー不要のデモモード
-- JPEG / PNG画像の解析
-- JPEG / PNGのみを含むZIPのブラウザ展開と順次解析
-- Gemini APIによる印字行と構造化データの抽出
-- SHA-256による保存済み画像の重複防止
-- 解析とPostgreSQL保存の明確な分離
-- 保存済みレシートの一覧・詳細表示
-- レシート削除時の原文、構造化サマリー、商品明細、画像ハッシュの関連削除
+Backendは環境変数で指定された管理者アカウントを使い、BCryptパスワードハッシュとサーバーセッションCookieで認証します。ログイン後の管理画面は `https://<backend-host>/admin/login.html` から利用します。ログイン情報をHTMLやJavaScriptへ埋め込みません。
 
-## デモモード
+公開URLは `GET /api/health`、`/admin/login.html`、および静的な公開フロントエンドです。`/api/receipts/**` は管理者セッションを必須とし、未認証はHTTP 401、認証済みで権限不足はHTTP 403になります。状態変更にはCSRFトークンも必要です。ログイン後の一覧、詳細、解析、保存、削除はBackendと同じオリジンで動作します。
 
-`reFront/index.html` の「デモを試す」から利用できます。Gemini APIキーは不要です。固定のサンプルレシートと事前作成済みの解析結果をFrontendだけで表示し、Gemini API、Backend API、PostgreSQLには接続しません。
+## Backendの環境変数
 
-## 通常の解析フロー
+Renderでは `ADMIN_USERNAME` と `ADMIN_PASSWORD_HASH` をSecret/Environment Variablesに設定してください。ハッシュはBCrypt形式にし、実パスワードを環境変数以外のファイル、文書、ログへ記載しないでください。ローカル用の項目名は `reBack/.env.example` を参照してください。RenderではTLS用Cookieを有効にするため `SESSION_COOKIE_SECURE=true` を設定します。認証設定がないとBackendは起動しません。
 
-1. `reFront/upload.html` でGemini APIキーを入力します。
-2. JPEG / PNG、またはJPEG / PNGを含むZIPを選択します。
-3. 「解析」で画像を1枚ずつGemini APIへ送信し、解析結果を画面に表示します。
-4. 内容を確認後、「PostgreSQLへ保存」を押すと未保存の解析結果を保存します。
-5. 保存済みレシートは一覧・詳細画面から参照・削除できます。
+BCryptハッシュはApache `htpasswd` の対話モードなど、パスワードをコマンド引数やシェル履歴へ書かない方法で生成してください。例: `htpasswd -nBC 12 admin-user` はパスワードを対話入力し、`admin-user:<bcrypt-hash>` を出力します。コロン以降のハッシュだけを `ADMIN_PASSWORD_HASH` に設定します。Render Blueprintの `sync: false` 項目は初回作成時にDashboardで設定します。
 
-Gemini APIキーはリクエスト単位で使用し、ソースコード、環境変数、Browser Storage、データベースへ保存しません。
+## ローカル起動
 
-## ローカル実行
-
-### 必要環境
-
-- Java 21
-- Maven
-- PostgreSQL
-- Python 3等の静的HTTPサーバー
-- Node.js（Frontendテストを実行する場合）
-
-### Backend
+Java 21、Maven、PostgreSQLが必要です。`reBack/.env.example` の値をローカル環境に設定し、ローカル用Cookie設定を利用します。
 
 ```bash
 cd reBack
 mvn spring-boot:run
 ```
 
-標準ポートは `8081`、ヘルスチェックは `GET http://localhost:8081/api/health` です。
+Backendの管理画面は `http://localhost:8081/admin/login.html`、ヘルスチェックは `http://localhost:8081/api/health` です。DB設定と管理者認証情報を用意してください。
 
-### Frontend
+公開Frontendの確認:
 
 ```bash
-cd reFront
-python3 -m http.server 5051 --directory ..
+python3 -m http.server 5051 --directory .
 ```
 
-ブラウザで `http://localhost:5051` を開きます。プロジェクトルートを配信するため、納品ドキュメントは `http://localhost:5051/doc/` から参照できます。デモモードだけを確認する場合、Backendは不要です。
-
-## 主要API
-
-| Method | Path | 概要 |
-| --- | --- | --- |
-| GET | `/api/health` | ヘルスチェック |
-| GET | `/api/receipts` | 保存済みレシート一覧 |
-| GET | `/api/receipts/{tableName}` | レシート詳細 |
-| POST | `/api/receipts/analyze` | 画像解析 |
-| POST | `/api/receipts/save` | 解析結果保存 |
-| DELETE | `/api/receipts/{tableName}` | レシートと関連データ削除 |
+`http://localhost:5051/reFront/` を開くと公開トップとBackend非接続のデモを確認できます。管理画面リンクはローカルBackendへ接続します。
 
 ## テスト
-
-Frontend:
-
-```bash
-cd reFront
-node --test test/smoke.test.mjs
-```
-
-2026-09-19の文書再作成時点で18/18 PASSを確認しています。
-
-Backend:
 
 ```bash
 cd reBack
 mvn test
 ```
 
-Backendには19件のテストコードがあります。`mvn test` を実行し、19/19 PASS（Failures 0、Errors 0）を確認済みです。
+```bash
+cd reFront
+node --test test/smoke.test.mjs
+```
 
-## 公開構成
+## 主なAPI
 
-- Frontend: GitHub Pages
-- Backend: Render Web Service（Docker）
-- Database: Render PostgreSQL
-- AI: Google Gemini API
-
-Renderでは `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASSWORD`、`APP_FRONTEND_ORIGIN` を使用します。Gemini APIキーはRender環境変数へ設定しません。
-
-## 納品ドキュメント
-
-`doc/index.html` から、企画・要件定義・設計・実装・テスト・リリース・運用・引継ぎのHTML文書を参照できます。
+| Method | Path | 認証 |
+| --- | --- | --- |
+| GET | `/api/health` | 不要 |
+| GET | `/api/auth/csrf` | 不要。CSRFトークン発行 |
+| POST | `/api/auth/login` | 不要。CSRFトークン必須 |
+| POST | `/api/auth/logout` | 管理者セッションとCSRFトークン必須 |
+| GET | `/api/receipts` | 管理者セッション必須 |
+| GET | `/api/receipts/{tableName}` | 管理者セッション必須 |
+| POST | `/api/receipts/analyze` | 管理者セッションとCSRFトークン必須 |
+| POST | `/api/receipts/save` | 管理者セッションとCSRFトークン必須 |
+| DELETE | `/api/receipts/{tableName}` | 管理者セッションとCSRFトークン必須 |

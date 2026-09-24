@@ -180,22 +180,6 @@ public class ReceiptTableRepository {
         jdbcTemplate.execute("ALTER TABLE receipt_image_hash_registry ALTER COLUMN table_name DROP NOT NULL");
     }
 
-    public String findTableNameBySha256(String sha256) {
-        ensureImageHashRegistry();
-        List<String> values = jdbcTemplate.query("SELECT table_name FROM receipt_image_hash_registry WHERE image_sha256 = ?", (rs, row) -> rs.getString(1), sha256);
-        return values.isEmpty() ? null : values.getFirst();
-    }
-
-    public com.example.receipt.game.GameReceipt findGameReceipt(String tableName) {
-        assertSafeTableName(tableName);
-        ensureStructuredDataTables();
-        List<com.example.receipt.game.GameReceipt> values = jdbcTemplate.query("SELECT receipt_table_name, image_sha256, store_name, store_category, purchased_at, total_amount FROM receipt_structured_summary WHERE receipt_table_name = ?", (rs, row) -> {
-            List<ReceiptItemData> items = jdbcTemplate.query("SELECT item_name, category, quantity, unit_price, amount FROM receipt_structured_item WHERE receipt_table_name = ? ORDER BY item_no", (itemRs, itemRow) -> new ReceiptItemData(itemRs.getString("item_name"), itemRs.getString("category"), itemRs.getBigDecimal("quantity"), (Long)itemRs.getObject("unit_price"), (Long)itemRs.getObject("amount")), tableName);
-            return new com.example.receipt.game.GameReceipt(tableName, rs.getString("image_sha256"), rs.getString("store_name"), rs.getString("store_category"), rs.getObject("purchased_at", java.time.LocalDateTime.class), (Long)rs.getObject("total_amount"), items);
-        }, tableName);
-        return values.isEmpty() ? null : values.getFirst();
-    }
-
     public List<ReceiptSummary> findAllReceiptTables() {
         List<ReceiptSummary> summaries = new ArrayList<>();
         for (String tableName : findReceiptTableNames()) {
