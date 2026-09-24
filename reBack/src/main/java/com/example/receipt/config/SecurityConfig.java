@@ -99,7 +99,7 @@ public class SecurityConfig {
                         }))
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/health", "/api/auth/csrf", "/api/auth/login", "/api/auth/session", "/admin/login.html", "/admin/login.js", "/admin/styles.css", "/admin/config.js", "/admin/admin-api.js").permitAll()
+                        .requestMatchers("/api/health", "/api/auth/csrf", "/api/auth/login", "/api/auth/session", "/admin/login.html", "/admin/login.js", "/admin/upload.html", "/admin/app.js", "/admin/styles.css", "/admin/config.js", "/admin/admin-api.js").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/receipts/analyze").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/receipts/save").permitAll()
                         .requestMatchers("/api/receipts", "/api/receipts/**").hasRole("ADMIN")

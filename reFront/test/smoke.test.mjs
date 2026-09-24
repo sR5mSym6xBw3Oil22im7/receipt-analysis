@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const html = await readFile(new URL("../upload.html", import.meta.url), "utf8");
+const html = await readFile(new URL("../../reBack/src/main/resources/static/admin/upload.html", import.meta.url), "utf8");
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const demo = await readFile(new URL("../demo.html", import.meta.url), "utf8");
 const demoJs = await readFile(new URL("../demo.js", import.meta.url), "utf8");
@@ -139,13 +139,14 @@ test("demo uses fixed frontend data without API or database calls", () => {
   assert.doesNotMatch(demoJs, /localStorage|sessionStorage/);
 });
 
-test("public index links only saved receipts to Backend login", () => {
+test("public index routes receipt analysis to Backend and saved receipts to login", () => {
   assert.doesNotMatch(indexJs, /fetch\s*\(/);
   assert.doesNotMatch(indexJs, /api\/receipts/);
   assert.match(indexJs, /ADMIN_BASE_URL/);
+  assert.match(indexJs, /admin-upload-link/);
+  assert.match(indexJs, /upload\.html/);
   assert.match(indexJs, /select-link/);
   assert.match(indexJs, /login\.html/);
-  assert.doesNotMatch(indexJs, /admin-upload-link|upload\.html/);
   assert.match(index, /保存済みレシートを確認する/);
 });
 
