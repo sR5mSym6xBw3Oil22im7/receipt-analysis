@@ -1,6 +1,6 @@
 const uploadLink = document.querySelector(".admin-upload-link");
 if (uploadLink && window.APP_CONFIG?.ADMIN_BASE_URL) {
-  uploadLink.href = `${window.APP_CONFIG.ADMIN_BASE_URL}/upload.html`;
+  uploadLink.href = `${window.APP_CONFIG.ADMIN_BASE_URL}/login.html?returnTo=upload`;
 }
 
 const adminLink = document.getElementById("select-link");

@@ -144,6 +144,7 @@ test("public index routes receipt analysis to Backend and saved receipts to logi
   assert.doesNotMatch(indexJs, /api\/receipts/);
   assert.match(indexJs, /ADMIN_BASE_URL/);
   assert.match(indexJs, /admin-upload-link/);
+  assert.match(indexJs, /login\.html\?returnTo=upload/);
   assert.match(indexJs, /upload\.html/);
   assert.match(indexJs, /select-link/);
   assert.match(indexJs, /login\.html/);
@@ -157,6 +158,8 @@ test("admin pages use Backend session authentication and CSRF instead of Referre
   assert.match(adminApi, /X-XSRF-TOKEN/);
   assert.match(adminApi, /credentials: "same-origin"/);
   assert.match(loginJs, /\/api\/auth\/login/);
+  assert.match(loginJs, /returnTo === "upload"/);
+  assert.match(loginJs, /\/admin\/upload\.html/);
   assert.match(loginJs, /\/admin\/select\.html/);
   assert.doesNotMatch(loginJs, /edix/);
 });
