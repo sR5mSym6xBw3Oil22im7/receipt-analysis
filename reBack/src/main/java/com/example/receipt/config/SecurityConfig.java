@@ -64,7 +64,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(allowedOrigin));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-XSRF-TOKEN"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -80,13 +80,16 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                              CookieCsrfTokenRepository csrfRepository,
-                                             SecurityContextRepository contextRepository) throws Exception {
+                                             SecurityContextRepository contextRepository,
+                                             AdminAccessTokenService accessTokenService) throws Exception {
         http
                 .cors(cors -> {})
+                .addFilterBefore(new AdminBearerTokenFilter(accessTokenService), CsrfFilter.class)
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository)
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                         .requireCsrfProtectionMatcher(request -> {
                             if (!CsrfFilter.DEFAULT_CSRF_MATCHER.matches(request)) return false;
+                            if (request.getHeader("Authorization") != null) return false;
                             String path = request.getRequestURI();
                             if (path.equals("/api/receipts") || path.startsWith("/api/receipts/")) {
                                 Authentication current = SecurityContextHolder.getContext().getAuthentication();

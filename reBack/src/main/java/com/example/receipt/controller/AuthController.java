@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.AuthenticationException;
+import com.example.receipt.config.AdminAccessTokenService;
 
 import java.util.Map;
 
@@ -27,13 +28,16 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final CsrfTokenRepository csrfTokenRepository;
+    private final AdminAccessTokenService accessTokenService;
 
     public AuthController(AuthenticationManager authenticationManager,
                           SecurityContextRepository securityContextRepository,
-                          CsrfTokenRepository csrfTokenRepository) {
+                          CsrfTokenRepository csrfTokenRepository,
+                          AdminAccessTokenService accessTokenService) {
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
         this.csrfTokenRepository = csrfTokenRepository;
+        this.accessTokenService = accessTokenService;
     }
 
     @GetMapping("/csrf")
@@ -68,7 +72,9 @@ public class AuthController {
             context.setAuthentication(result);
             SecurityContextHolder.setContext(context);
             securityContextRepository.saveContext(context, request, response);
-            return ResponseEntity.ok(Map.of("redirect", "/admin/select.html"));
+            return ResponseEntity.ok(Map.of(
+                    "redirect", "/admin/select.html",
+                    "token", accessTokenService.issue(result.getName())));
         } catch (AuthenticationException exception) {
             SecurityContextHolder.clearContext();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "ユーザーIDまたはパスワードが正しくありません。"));
