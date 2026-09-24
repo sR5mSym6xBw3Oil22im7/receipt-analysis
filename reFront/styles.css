@@ -80,7 +80,8 @@ form {
 .selected-file-name { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 
 input[type="file"],
-input[type="password"] {
+#login-form input[type="text"],
+#login-form input[type="password"] {
   width: 100%;
   padding: 12px;
   border: 1px solid #9ca3af;
