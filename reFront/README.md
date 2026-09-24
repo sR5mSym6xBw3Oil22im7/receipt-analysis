@@ -1,31 +1,16 @@
-# Frontend
+# フロントエンド
 
-公開トップ画面とAPIキー不要のデモを含む静的HTML/CSS/JavaScriptです。GitHub Pagesでは一般公開を維持します。デモはサンプルデータをブラウザ内で表示し、Backend、Gemini API、データベースへリクエストしません。
+reFront/には利用者向けの静的ページとブラウザー側のJavaScript/CSSがあります。
 
-## 公開画面
+## ページ
 
-- `index.html` / `index.js`: 公開トップ画面。BackendへのAPIリクエストを行わず、管理画面へのリンクを表示します。
-- `demo.html` / `demo.js`: Backend非接続のデモ。
-- `config.js`: 公開トップからBackendの管理画面URLへ誘導します。
+- index.html — デモ、解析、保存済みレシート確認への入口
+- demo.html — 固定サンプルを使うAPIキー不要のデモ
 
-## Backend管理画面
+管理者ログイン、画像解析、保存済みレシート管理のHTMLはreBackのstatic/adminから配信されます。
 
-ログイン、解析、保存、一覧、詳細、削除の画面はBackendから同一オリジンで配信されます。URLは `https://<backend-host>/admin/login.html` です。アップロード画面と保存済みレシート一覧は、それぞれBackendの `reBack/src/main/resources/static/admin/upload.html` と `select.html` から配信します。ログイン画面HTMLは `reBack/src/main/resources/static/admin/login.html` を編集してください。GitHub Pages上の公開画面から管理APIを呼び出しません。
+## ローカル利用
 
-認証はBackendセッションCookie、状態変更のCSRF対策は `X-XSRF-TOKEN` ヘッダーを使います。画面制御やReferrerを認証の代わりにしません。
+バックエンドとPostgreSQLを起動した後、index.htmlをブラウザーで開きます。config.jsはfileまたはlocalhost環境でlocalhost:8081をAPI接続先に設定します。
 
-## ローカル確認
-
-公開画面とデモ:
-
-```bash
-python3 -m http.server 5051 --directory .
-```
-
-Backend画面を使う場合はBackendを起動し、`http://localhost:8081/admin/login.html` を開きます。
-
-## テスト
-
-```bash
-node --test test/smoke.test.mjs
-```
+Geminiによる解析では画面にAPIキーを入力します。デモ画面は固定データを使用し、Gemini APIを呼び出しません。解析画面はJPEG/PNG画像と、JPEG/PNGを含むZIPファイルを扱います。
