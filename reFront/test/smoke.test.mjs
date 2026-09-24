@@ -121,7 +121,7 @@ test("index links to demo, upload, and the saved-receipts login entry", () => {
   assert.match(index, /APIキー不要/);
   assert.match(index, /href="\.\/upload\.html"/);
   assert.match(index, /id="select-link"[^>]*href="\.\/login\.html"/);
-  assert.match(index, /<script src="\.\/index\.js"><\/script>/);
+  assert.match(index, /<script src="\.\/index\.js\?v=20260924-public-menu-routing"><\/script>/);
 });
 
 test("demo uses fixed frontend data without API or database calls", () => {
@@ -140,11 +140,14 @@ test("demo uses fixed frontend data without API or database calls", () => {
   assert.doesNotMatch(demoJs, /localStorage|sessionStorage/);
 });
 
-test("public index does not query protected receipt APIs and links to Backend admin pages", () => {
+test("public index links only saved receipts to Backend login", () => {
   assert.doesNotMatch(indexJs, /fetch\s*\(/);
   assert.doesNotMatch(indexJs, /api\/receipts/);
   assert.match(indexJs, /ADMIN_BASE_URL/);
-  assert.match(indexJs, /admin-upload-link/);
+  assert.match(indexJs, /select-link/);
+  assert.match(indexJs, /login\.html/);
+  assert.doesNotMatch(indexJs, /admin-upload-link|upload\.html/);
+  assert.match(index, /保存済みレシートを確認する/);
 });
 
 test("admin pages use Backend session authentication and CSRF instead of Referrer guards", () => {
