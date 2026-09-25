@@ -211,6 +211,9 @@ public class ReceiptTableRepository {
         if (tableExists("receipt_structured_summary") || tableExists("receipt_structured_item")) {
             ensureStructuredDataTables();
         }
+        if (tableExists("receipt_monster_card")) {
+            jdbcTemplate.update("DELETE FROM receipt_monster_card WHERE receipt_table_name = ?", tableName);
+        }
         jdbcTemplate.execute("DROP TABLE " + tableName);
         if (tableExists("receipt_structured_item")) {
             jdbcTemplate.update("DELETE FROM receipt_structured_item WHERE receipt_table_name = ?", tableName);
