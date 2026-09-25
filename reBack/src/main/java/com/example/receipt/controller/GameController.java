@@ -28,5 +28,8 @@ public class GameController {
     @DeleteMapping("/local") public ResponseEntity<Void> cancel(HttpSession s){s.removeAttribute("gameState");return ResponseEntity.noContent().build();}
     private int score(MonsterCard a,MonsterCard b){return BattleScoring.scoreX2(a,b);}
     private ReceiptException bad(String m){return new ReceiptException(HttpStatus.CONFLICT,"GAME_STATE_INVALID",m);}
-    public record GenerateRequest(String apiKey,boolean regenerate){} public record SelectRequest(String receiptId){} private record LocalGame(String p1,String seed1,String p2,String seed2,Object result){}
+    public record GenerateRequest(String apiKey,boolean regenerate){
+        @Override public String toString(){return "GenerateRequest[apiKey=<redacted>, regenerate="+regenerate+"]";}
+    }
+    public record SelectRequest(String receiptId){} private record LocalGame(String p1,String seed1,String p2,String seed2,Object result){}
 }
