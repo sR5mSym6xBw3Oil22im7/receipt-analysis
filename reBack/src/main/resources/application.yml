@@ -34,10 +34,9 @@ app:
 
 gemini:
   receipt-model: gemini-3.5-flash-lite
-  card-model: ${GEMINI_CARD_MODEL:gemini-3.8-flash}
+  card-model: gemini-3.5-flash-lite
 
 logging:
   logback:
     rollingpolicy:
       file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.zip"
-

@@ -34,7 +34,7 @@ public class SvgCardService {
     private static final Pattern NUMBER = Pattern.compile("[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?");
     private final JdbcTemplate db;
     private final String model;
-    public SvgCardService(JdbcTemplate db, @Value("${gemini.card-model:gemini-2.5-flash}") String model) { this.db=db; this.model=model; }
+    public SvgCardService(JdbcTemplate db, @Value("${gemini.card-model:gemini-3.5-flash-lite}") String model) { this.db=db; this.model=model; }
 
     public void initialize() {
         db.execute("CREATE TABLE IF NOT EXISTS receipt_monster_card (receipt_table_name VARCHAR(64) PRIMARY KEY, source_seed CHAR(64) NOT NULL, card_name VARCHAR(48) NOT NULL, species VARCHAR(32) NOT NULL, rarity VARCHAR(16) NOT NULL, power INTEGER NOT NULL, guard_value INTEGER NOT NULL, speed INTEGER NOT NULL, svg TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP)");
