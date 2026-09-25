@@ -1,48 +1,5 @@
 <!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="レシート解析システム 環境構成書">
-  <title>環境構成書 | レシート解析システム</title>
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/print.css" media="print">
-</head>
-<body>
-  <header class="site-header">
-    <div class="header-inner">
-      <div class="header-copy">
-        <p class="eyebrow">RECEIPT ANALYSIS / DELIVERY DOCUMENT</p>
-        <h1>環境構成書</h1>
-        <p class="header-lead">現行ソースコード・設定・テストを基準に整理した工程別ドキュメント</p>
-      </div>
-      <div class="doc-meta"><span>工程：環境設計</span><span>文書版：1.0</span><span>作成日：2026-09-19</span><span>状態：納品版（現行ソース準拠）</span></div>
-    </div>
-  </header>
-  <div class="layout">
-    <nav class="toc" aria-label="納品文書一覧">
-      <h2>納品文書一覧</h2><a href="index.html">文書目次</a><div class="phase">企画</div><a href="01_project_overview.html">01. プロジェクト概要書</a><a href="02_technology_selection.html">02. 技術選定書</a><div class="phase">要件定義</div><a href="03_requirements_definition.html">03. 要件定義書</a><a href="04_function_list.html">04. 機能一覧表</a><a href="05_nonfunctional_requirements.html">05. 非機能要件定義書</a><a href="06_scope.html">06. 対象範囲・対象外一覧</a><div class="phase">基本設計</div><a href="07_screen_list.html">07. 画面一覧表</a><a href="08_screen_transition.html">08. 画面遷移設計書</a><a href="09_screen_design.html">09. 画面設計書</a><a href="10_screen_item_definition.html">10. 画面項目定義書</a><div class="phase">詳細設計</div><a href="11_input_validation.html">11. 入力チェック仕様書</a><div class="phase">基本設計</div><a href="12_system_architecture.html">12. システム構成設計書</a><div class="phase">基本設計／実装</div><a href="13_frontend_design.html">13. フロントエンド設計書</a><a href="14_backend_design.html">14. バックエンド設計書</a><div class="phase">基本設計</div><a href="15_api_specification.html">15. API仕様書</a><a href="16_database_design.html">16. データベース設計書</a><div class="phase">基本設計／実装</div><a href="17_ai_receipt_analysis_specification.html">17. AIレシート解析仕様書</a><div class="phase">基本設計</div><a href="18_external_integration.html">18. 外部サービス連携仕様書</a><a href="19_security_design.html">19. セキュリティ設計書</a><div class="phase">詳細設計</div><a href="20_error_message_list.html">20. エラー処理・メッセージ一覧</a><div class="phase">環境設計</div><a class="current" href="21_environment_configuration.html">21. 環境構成書</a><a href="22_environment_variables.html">22. 環境変数一覧</a><a href="23_deployment_design.html">23. デプロイ設計書</a><div class="phase">実装</div><a href="24_coding_development_guide.html">24. 開発・コーディングガイド</a><div class="phase">テスト</div><a href="25_test_plan.html">25. テスト計画書</a><a href="26_test_cases.html">26. テスト仕様書・テストケース一覧</a><a href="27_test_result_report.html">27. テスト結果報告書</a><div class="phase">リリース</div><a href="28_release_procedure.html">28. リリース手順書</a><div class="phase">運用</div><a href="29_operations_maintenance_manual.html">29. 運用・保守手順書</a><a href="30_data_retention_policy.html">30. データ保持・削除方針書</a><div class="phase">開発者向け</div><a href="31_readme.html">31. README</a><div class="phase">ポートフォリオ</div><a href="32_portfolio_description.html">32. ポートフォリオ説明資料</a><div class="phase">引継ぎ</div><a href="33_known_issues_handover.html">33. 既知課題・引継ぎ事項</a>
-    </nav>
-    <main class="main">
-      <article class="document">
-        <section class="chapter"><h2>1. 環境一覧</h2><div class="table-wrap"><table><thead><tr><th>環境</th><th>Frontend</th><th>Backend</th><th>DB</th><th>用途</th></tr></thead><tbody><tr><td>Local</td><td>python http.server :5051</td><td>Spring Boot :8081</td><td>ローカルPostgreSQL receipt_db</td><td>開発・手動確認</td></tr><tr><td>Test</td><td>Node test</td><td>Spring Boot Test</td><td>H2 in-memory PostgreSQL mode</td><td>自動テスト</td></tr><tr><td>Production</td><td>GitHub Pages</td><td>Render Docker Web Service</td><td>Render PostgreSQL 18</td><td>公開</td></tr></tbody></table></div></section><section class="chapter"><h2>2. ローカル前提</h2><ul><li>Java 21</li><li>Maven</li><li>PostgreSQL</li><li>Node.js（Frontend test）</li><li>Python 3または同等の静的HTTPサーバー</li><li>Gemini APIキー（実AI接続時のみ）</li></ul></section><section class="chapter"><h2>3. ローカル起動</h2><pre><code>export DB_HOST=localhost
-export DB_PORT=5432
-export DB_NAME=receipt_db
-export DB_USER=postgres
-export DB_PASSWORD=your_password
-export ADMIN_USERNAME=your_admin_id
-export ADMIN_PASSWORD_HASH=your_bcrypt_hash
-export SESSION_COOKIE_SECURE=false
-
-cd reBack
-mvn spring-boot:run
-
-# another terminal
-cd reFront
-python3 -m http.server 5051</code></pre></section><section class="chapter"><h2>4. 本番設定</h2><p>GitHub Pagesの公開画面はデモを表示し、管理画面リンクをBackendの <code>/admin/login.html</code> へ接続します。管理画面/API通信はBackendと同一Originです。Render側のBlueprintは <code>reBack/render.yml</code> でWeb ServiceとPostgreSQLを定義します。</p></section><div class="nav-links"><a href="20_error_message_list.html">← エラー処理・メッセージ一覧</a><a href="22_environment_variables.html">環境変数一覧 →</a></div>
-      </article>
-    </main>
-  </div>
-  <footer class="site-footer"><p>レシート解析システム 納品ドキュメント / Version 1.0</p></footer>
-</body>
-</html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="環境構成 | レシート解析システム"><title>環境構成 | レシート解析システム</title><link rel="stylesheet" href="css/style.css"></head>
+<body><header class="site-header"><div class="header-inner"><div><div class="brand">RECEIPT ANALYSIS / DEVELOPMENT DOCUMENTS</div><h1>環境構成</h1><p class="lead">標準設定とlocalプロファイル</p></div><div class="doc-meta"><span>対象：receipt-analysis</span><span>文書版：1.0</span><span>形式：HTML / UTF-8</span><span>状態：再作成</span></div></div></header>
+<div class="layout"><nav class="sidebar" aria-label="文書ナビゲーション"><h2>文書一覧</h2><a href="index.html">文書目次</a><div class="phase">企画</div><a href="01_project_overview.html">01. プロジェクト概要書</a><a href="02_technology_selection.html">02. 技術構成一覧</a><div class="phase">要件定義</div><a href="03_requirements_definition.html">03. 現行仕様・要件一覧</a><a href="04_function_list.html">04. 機能一覧表</a><a href="05_nonfunctional_requirements.html">05. 非機能条件一覧</a><a href="06_scope.html">06. 対象範囲一覧</a><div class="phase">基本設計</div><a href="07_screen_list.html">07. 画面一覧表</a><a href="08_screen_transition.html">08. 画面遷移概要</a><a href="09_screen_design.html">09. 画面構成</a><a href="10_screen_item_definition.html">10. 画面項目一覧</a><a href="11_input_validation.html">11. 入力検証仕様</a><a href="12_system_architecture.html">12. システム構成</a><a href="15_api_specification.html">15. API仕様一覧</a><a href="16_database_design.html">16. データベース構成</a><a href="18_external_integration.html">18. 外部連携一覧</a><a href="19_security_design.html">19. セキュリティ設定</a><div class="phase">基本設計／実装</div><a href="13_frontend_design.html">13. フロントエンド構成</a><a href="14_backend_design.html">14. バックエンド構成</a><a href="17_ai_receipt_analysis_specification.html">17. AIレシート解析仕様</a><div class="phase">詳細設計</div><a href="20_error_message_list.html">20. エラー応答一覧</a><div class="phase">環境設定</div><a href="21_environment_configuration.html" class="current">21. 環境構成</a><a href="22_environment_variables.html">22. 環境変数一覧</a><a href="23_deployment_design.html">23. 実行・配布構成</a><div class="phase">テスト</div><a href="24_test_plan.html">24. テスト構成</a><a href="25_test_cases.html">25. 自動テスト一覧</a><a href="26_test_result_report.html">26. テスト結果記録</a><div class="phase">リリース</div><a href="27_release_procedure.html">27. 実行手順</a><div class="phase">運用</div><a href="28_data_retention_policy.html">28. データ保持・削除仕様</a><a href="32_operations_maintenance_manual.html">32. 運用・保守手順書</a><div class="phase">開発者向け</div><a href="29_readme.html">29. README案内</a><div class="phase">紹介資料</div><a href="30_portfolio_description.html">30. システム紹介</a><div class="phase">実装</div><a href="31_coding_and_development_guide.html">31. 開発手順書</a></nav><main class="main"><article class="document"><section><h2>1. 標準設定</h2><p>application.ymlは既定で8081番ポート、PostgreSQL、5 MB multipart上限、JDBC query timeout 20秒を設定します。</p></section><section><h2>2. localプロファイル</h2><p>application-local.ymlはログファイル名を設定し、HTTPローカル開発向けにセッションCookieのSecure属性をfalseにします。</p></section><section><h2>3. フロントエンド接続先</h2><p>reFront/config.jsはfile/localhost環境ではlocalhost:8081を、それ以外ではファイル内に設定された公開API URLを使います。</p></section><div class="nav-links"><a href="20_error_message_list.html">← エラー応答一覧</a><a href="22_environment_variables.html">環境変数一覧 →</a></div></article></main></div>
+<footer class="site-footer">レシート解析システム 開発文書 / HTML・CSS / UTF-8</footer></body></html>

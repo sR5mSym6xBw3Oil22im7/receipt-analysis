@@ -67,7 +67,8 @@ public class SecurityConfig {
                         .requireCsrfProtectionMatcher(request -> {
                             if (!CsrfFilter.DEFAULT_CSRF_MATCHER.matches(request)) return false;
                             String path = request.getRequestURI();
-                            if (path.equals("/api/receipts") || path.startsWith("/api/receipts/")) {
+                            if (path.equals("/api/receipts") || path.startsWith("/api/receipts/")
+                                    || path.equals("/api/game") || path.startsWith("/api/game/")) {
                                 Authentication current = SecurityContextHolder.getContext().getAuthentication();
                                 return current != null && current.isAuthenticated();
                             }
@@ -78,6 +79,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/health", "/api/auth/csrf", "/api/auth/login", "/api/auth/session", "/admin/login.html", "/admin/login.js", "/admin/upload.html", "/admin/app.js", "/admin/styles.css", "/admin/config.js", "/admin/admin-api.js").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/receipts/analyze").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/receipts/save").permitAll()
+                        .requestMatchers("/api/game/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/game.html", "/admin/game.js", "/admin/game.css").hasRole("ADMIN")
                         .requestMatchers("/api/receipts", "/api/receipts/**").hasRole("ADMIN")
                         .requestMatchers("/api/auth/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")

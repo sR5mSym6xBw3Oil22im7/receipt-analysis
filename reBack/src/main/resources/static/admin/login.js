@@ -16,7 +16,7 @@ form.addEventListener("submit", async (event) => {
     }
     const result = await response.json();
     const returnTo = new URLSearchParams(window.location.search).get("returnTo");
-    const destination = returnTo === "upload" ? "/admin/upload.html" : (result.redirect || "/admin/select.html");
+    const destination = returnTo === "upload" ? "/admin/upload.html" : returnTo === "game" ? "/admin/game.html" : (result.redirect || "/admin/select.html");
     window.location.assign(destination);
   } catch {
     status.textContent = "Backendに接続できませんでした。";
