@@ -31,6 +31,10 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 
 DB接続先はDB_HOST、DB_PORT、DB_NAME、DB_USER、DB_PASSWORDで変更できます。ローカル起動後、reFront/index.htmlをブラウザーで開きます。Gemini解析には有効なAPIキーの入力が必要です。デモはAPIキーなしで利用できます。
 
+## 開発・公開の前提
+
+設計・実装・テストはローカル環境で行います。ローカル環境で不具合が0件であることを確認してから、フロントエンドをGitHub Pages、バックエンドをRenderへアップロードします。
+
 ## テスト
 
 ~~~sh

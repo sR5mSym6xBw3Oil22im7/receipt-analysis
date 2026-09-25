@@ -77,6 +77,7 @@ form {
 }
 
 .file-picker-button:hover { background: #1d4ed8; }
+.file-picker-button.is-disabled { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
 .selected-file-name { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 
 input[type="file"],

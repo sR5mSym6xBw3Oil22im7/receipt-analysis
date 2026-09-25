@@ -1,5 +1,6 @@
 const form = document.getElementById("receipt-form");
 const fileInputs = [...document.querySelectorAll('input[name="file"]')];
+const filePickerButtons = [...document.querySelectorAll(".file-picker-button")];
 const apiKeyInput = document.getElementById("gemini-api-key");
 const clearApiKeyButton = document.getElementById("clear-api-key");
 const submitButton = document.getElementById("submit-button");
@@ -24,6 +25,16 @@ const API_KEY_RETRY_CODES = new Set([
 
 function hasPendingReceipts() {
   return analysisReady && analyzedReceipts.some((receipt) => !receipt.stored);
+}
+
+function setFilePickerDisabled(disabled) {
+  fileInputs.forEach((input) => {
+    input.disabled = disabled;
+  });
+  filePickerButtons.forEach((button) => {
+    button.classList.toggle("is-disabled", disabled);
+    button.setAttribute("aria-disabled", String(disabled));
+  });
 }
 
 function updateSaveButton() {
@@ -61,6 +72,7 @@ function resetUploadPagePreservingApiKey() {
   busy = false;
   submitButton.disabled = false;
   submitButton.textContent = "解析";
+  setFilePickerDisabled(false);
   saveButton.disabled = true;
   saveButton.classList.add("hidden");
   saveButton.textContent = "PostgreSQLへ保存";
@@ -87,6 +99,7 @@ function setBusy(mode) {
   busy = Boolean(mode);
   submitButton.disabled = busy;
   submitButton.textContent = mode === "analyze" ? "解析中..." : "解析";
+  setFilePickerDisabled(mode === "analyze");
   saveButton.textContent = mode === "save" ? "保存中..." : "PostgreSQLへ保存";
   updateSaveButton();
 }
