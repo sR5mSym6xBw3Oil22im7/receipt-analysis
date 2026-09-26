@@ -2,7 +2,7 @@ const $=id=>document.getElementById(id), base=window.APP_CONFIG?.API_BASE_URL??w
 let selected=null, card=null, stage="P1", poll=null, remoteMode=false, roomCode=sessionStorage.getItem('receiptGameRoom')||"", regenerate=false;
 remoteMode=Boolean(roomCode);
 const api=async(path,opts={})=>{const r=await adminFetch(base+path,opts);if(!r.ok){let d={};try{d=await r.json()}catch{};const e=Error(d.message||`通信に失敗しました (${r.status})`);e.code=d.code;throw e}return r.status===204?null:r.json()};
-function wipe(){selected=null;card=null;$('preview').replaceChildren();$('apikey').value="";$('keybox').hidden=true;$('generate').hidden=true;$('cancel').hidden=true;$('confirm').hidden=true;$('restart').hidden=true;$('fight').hidden=true;$('again').hidden=true;$('result').replaceChildren()}
+function wipe(){selected=null;card=null;$('card-step').hidden=true;$('preview').replaceChildren();$('apikey').value="";$('keybox').hidden=true;$('generate').hidden=true;$('cancel').hidden=true;$('confirm').hidden=true;$('restart').hidden=true;$('fight').hidden=true;$('again').hidden=true;$('result').replaceChildren()}
 async function load(){wipe();$('status').textContent='';$('choices').replaceChildren();$('entry').hidden=true;$('play').hidden=false;$('back-link').hidden=true;document.querySelector('header').hidden=true;const state=remoteMode?await api(`/api/game/rooms/${roomCode}`):await api('/api/game/local');if(remoteMode&&state.state==='DONE'){showResult(state);return}if(remoteMode&&state.myConfirmed){$('stage').textContent='選択済みです。対戦相手を待っています。';startRoomPolling();return}if(state?.stage==='RESULT'){showResult(state.result);return}stage=remoteMode?'REMOTE':state?.stage==='PLAYER2'?'P2':state?.stage==='READY'?'READY':'P1';$('stage').textContent=stage==="P1"?"Step 1：レシートを選んでください":stage==="READY"?"両者のカードが確定しました。":stage==="REMOTE"?`ルーム ${roomCode} · レシートを選んでください`:"Player 2：別のレシートを選んでください";if(stage==='READY'){$('choices').replaceChildren();$('fight').hidden=false;return}const rows=await api('/api/game/receipts');const list=$('choices');list.replaceChildren();if(rows.length<2){$('status').textContent='対戦には保存済みレシートが2件必要です。レシート登録から追加してください。';$('stage').append(Object.assign(document.createElement('a'),{href:'/admin/upload.html',textContent:' レシート登録'}));return}rows.slice(0,9).forEach(x=>{const b=document.createElement('button');b.className='choice';b.textContent=x.id;b.onclick=()=>choose(x,b);list.append(b)})}
 async function choose(row,button){
   wipe();$('status').textContent='';regenerate=Boolean(row.cardReady);selected=row.id;
@@ -11,7 +11,7 @@ async function choose(row,button){
   $('generate').textContent='モンスターカードを生成';
   $('status').textContent='';
 }
-function preview(c){card=c;const img=document.createElement('img');img.alt=`${c.name} card`;img.src=`/api/game/cards/${encodeURIComponent(c.receiptId)}/svg?fresh=${Date.now()}`;$('preview').replaceChildren(img);$('generate').hidden=true;$('confirm').hidden=false;$('restart').hidden=false}
+function preview(c){card=c;$('card-step').hidden=false;const img=document.createElement('img');img.alt=`${c.name} card`;img.src=`/api/game/cards/${encodeURIComponent(c.receiptId)}/svg?fresh=${Date.now()}`;$('preview').replaceChildren(img);$('generate').hidden=true;$('confirm').hidden=false;$('restart').hidden=false}
 $('generate').onclick=async()=>{
   const key=$('apikey').value.trim();if(!key){$('status').textContent='Gemini APIキーを入力してください。';$('apikey').focus();return}$('status').textContent='カード生成中…';$('generate').disabled=true;
   try{
