@@ -76,11 +76,10 @@ public class SecurityConfig {
                         }))
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/health", "/api/auth/csrf", "/api/auth/login", "/api/auth/session", "/admin/login.html", "/admin/login.js", "/admin/upload.html", "/admin/app.js", "/admin/styles.css", "/admin/config.js", "/admin/admin-api.js").permitAll()
+                        .requestMatchers("/api/health", "/api/auth/csrf", "/api/auth/login", "/api/auth/session", "/admin/login.html", "/admin/login.js", "/admin/upload.html", "/admin/app.js", "/admin/styles.css", "/admin/config.js", "/admin/admin-api.js", "/admin/game.html", "/admin/game.js", "/admin/game.css").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/receipts/analyze").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/receipts/save").permitAll()
-                        .requestMatchers("/api/game/**").hasRole("ADMIN")
-                        .requestMatchers("/admin/game.html", "/admin/game.js", "/admin/game.css").hasRole("ADMIN")
+                        .requestMatchers("/api/game/**").permitAll()
                         .requestMatchers("/api/receipts", "/api/receipts/**").hasRole("ADMIN")
                         .requestMatchers("/api/auth/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")

@@ -17,7 +17,7 @@ import java.util.Map;
 public class GameController {
     private final SvgCardService cards;
     public GameController(SvgCardService cards){this.cards=cards;}
-    @GetMapping("/receipts") public ResponseEntity<?> receipts(){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(cards.list());}
+    @GetMapping("/receipts") public ResponseEntity<?> receipts(){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(cards.randomList(9));}
     @GetMapping("/cards/{id}") public ResponseEntity<MonsterCard> card(@PathVariable String id){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(cards.get(id));}
     @PostMapping("/cards/{id}/generate") public ResponseEntity<MonsterCard> generate(@PathVariable String id,@RequestBody GenerateRequest request){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(cards.generate(id,request.apiKey(),request.regenerate()));}
     @GetMapping(value="/cards/{id}/svg",produces="image/svg+xml;charset=UTF-8") public ResponseEntity<String> svg(@PathVariable String id){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).header("X-Content-Type-Options","nosniff").header("Content-Security-Policy","default-src 'none'; style-src 'none'; sandbox").body(cards.get(id).svg());}

@@ -10,5 +10,5 @@ if (adminLink && window.APP_CONFIG?.ADMIN_BASE_URL) {
 
 const gameLink = document.getElementById("game-link");
 if (gameLink && window.APP_CONFIG?.ADMIN_BASE_URL) {
-  gameLink.href = `${window.APP_CONFIG.ADMIN_BASE_URL}/login.html?returnTo=game`;
+  gameLink.href = `${window.APP_CONFIG.ADMIN_BASE_URL}/game.html`;
 }

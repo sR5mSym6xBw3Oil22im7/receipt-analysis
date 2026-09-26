@@ -20,6 +20,8 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.text.Normalizer;
 import java.security.MessageDigest;
 import java.util.*;
@@ -50,10 +52,24 @@ public class SvgCardService {
             m.put("cardReady", db.queryForObject("SELECT COUNT(*) FROM receipt_monster_card WHERE receipt_table_name=?",Integer.class,name)>0); out.add(m);
         } return out;
     }
+    public List<Map<String,Object>> randomList(int limit) {
+        List<Map<String,Object>> receipts = list();
+        String timestampKey = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss", Locale.ROOT));
+        String randomIndexKey = timestampKey + "-" + UUID.randomUUID();
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        random.setSeed(randomIndexKey.getBytes(StandardCharsets.UTF_8));
+        Collections.shuffle(receipts, random);
+        return new ArrayList<>(receipts.subList(0, Math.min(Math.max(limit, 0), receipts.size())));
+    }
     public MonsterCard get(String id) { initialize(); requireReceipt(id); return db.query("SELECT source_seed,card_name,species,rarity,power,guard_value,speed,svg FROM receipt_monster_card WHERE receipt_table_name=?",rs->{if(!rs.next())throw missingCard(); String seed=seed(id); if(!seed.equals(rs.getString(1))) throw new ReceiptException(HttpStatus.CONFLICT,"CARD_SOURCE_CHANGED","レシート内容が変わっています。カードを再生成してください。"); return new MonsterCard(id,rs.getString(2),rs.getString(3),rs.getString(4),rs.getInt(5),rs.getInt(6),rs.getInt(7),seed,rs.getString(8));},id); }
     public MonsterCard generate(String id,String key,boolean regenerate) {
         initialize(); requireReceipt(id); String seed=seed(id);
-        try { return get(id); } catch (ReceiptException e) { if(!e.code().equals("CARD_NOT_READY")&&!(regenerate&&e.code().equals("CARD_SOURCE_CHANGED"))) throw e; }
+        if (!regenerate) {
+            try { return get(id); }
+            catch (ReceiptException e) {
+                if (!e.code().equals("CARD_NOT_READY") && !e.code().equals("CARD_SOURCE_CHANGED")) throw e;
+            }
+        }
         final String activeApiKey;
         try { activeApiKey = GeminiApiKeyPolicy.requireValid(key); }
         catch (IllegalArgumentException ex) {
