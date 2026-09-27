@@ -20,22 +20,13 @@
 
 ## ローカル起動
 
-必要環境はJava 21、Maven、PostgreSQL、Python 3、OpenSSLです。application.ymlのDB既定値はlocalhost:5432/receipt_db、ユーザー名・パスワードはpostgresです。管理者IDとBCryptパスワードハッシュを環境変数に設定してください。
+必要環境はJava 21、Docker、Python 3、OpenSSLです。backendの設定を`reBack/.env`に用意した後、リポジトリのルートで以下を実行するとPostgreSQL、backend、frontendを停止して再起動します。
 
 ~~~sh
-export ADMIN_USERNAME=admin
-export ADMIN_PASSWORD_HASH='<BCrypt形式のハッシュ>'
-cd reBack
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+python3 scripts/restart_local.py
 ~~~
 
-別のターミナルで、リポジトリのルートからフロントエンドを起動します。
-
-~~~sh
-python3 scripts/start_frontend.py
-~~~
-
-フロントエンドは `https://localhost:5051` で起動します。初回は一時領域にlocalhost用の自己署名証明書を生成するため、ブラウザーに証明書の警告が表示される場合があります。`http://localhost:5500` は使用しません。
+スクリプトはbackendのhealth endpointとHTTPS frontendの応答を確認してから成功を表示します。frontendは `https://localhost:5051` で起動します。初回はlocalhost用自己署名証明書の警告が表示される場合があります。`http://localhost:5500` は使用しないでください。起動ログは一時ディレクトリ内の`receipt-analysis-local/logs`に出力します。
 
 DB接続先はDB_HOST、DB_PORT、DB_NAME、DB_USER、DB_PASSWORDで変更できます。Gemini解析には有効なAPIキーの入力が必要です。デモはAPIキーなしで利用できます。
 
