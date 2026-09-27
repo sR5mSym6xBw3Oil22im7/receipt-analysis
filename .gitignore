@@ -3,3 +3,6 @@
 
 # Local editor/workspace settings.
 /.vscode/
+
+# Runtime logs
+*.log
