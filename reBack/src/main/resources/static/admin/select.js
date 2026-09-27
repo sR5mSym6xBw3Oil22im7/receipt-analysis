@@ -11,7 +11,7 @@ const selectedTableNames = new Set();
 let receiptCount = 0;
 
 function configureBackLink() {
-  backLink.href = window.APP_CONFIG?.PUBLIC_BASE_URL ?? "https://sr5msym6xbw3oil22im7.github.io/";
+  backLink.href = window.APP_CONFIG?.PUBLIC_BASE_URL ?? "https://sr5msym6xbw3oil22im7.github.io/receipt-analysis/reFront/index.html";
 }
 
 function updateDeleteSelectedButton() {
