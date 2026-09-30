@@ -6,3 +6,29 @@
 
 # Runtime logs
 *.log
+
+# LibreOffice / OpenDocument files
+*.ods
+*.odt
+*.odp
+*.odg
+*.odf
+*.odb
+# LibreOffice lock files
+.~lock.*#
+
+# Microsoft Office files
+*.xls
+*.xlsx
+*.xlsm
+*.xlsb
+*.doc
+*.docx
+*.docm
+*.ppt
+*.pptx
+*.pptm
+*.mdb
+*.accdb
+# Office temp files
+~$*
