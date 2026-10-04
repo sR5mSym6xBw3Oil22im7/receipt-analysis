@@ -42,7 +42,7 @@ test("analysis reports per-image progress and does not wait forever", () => {
 
 
 test("upload page cache-busts app.js so old upload code is not reused", () => {
-  assert.match(html, /<script src="\.\/app\.js\?v=20260827-zip-directories-timeout-210-wait15"><\/script>/);
+  assert.match(html, /<script src="\.\/app\.js\?v=20261004-admin-only-receipt-api"><\/script>/);
 });
 
 test("frontend posts multipart data to the receipt endpoint", () => {
@@ -118,9 +118,10 @@ test("index links to demo, upload, and the saved-receipts login entry", () => {
   assert.match(index, /href="\.\/demo\.html"/);
   assert.match(index, /デモを試す/);
   assert.match(index, /APIキー不要/);
-  assert.match(index, /href="\.\/upload\.html"/);
+  assert.match(index, /class="menu-link admin-upload-link" href="https:\/\/receipt-analysis-b8po\.onrender\.com\/admin\/login\.html\?returnTo=upload"/);
+  assert.doesNotMatch(index, /href="\.\/upload\.html"/);
   assert.match(index, /id="select-link"[^>]*href="https:\/\/receipt-analysis-b8po\.onrender\.com\/admin\/login\.html"/);
-  assert.match(index, /<script src="\.\/index\.js\?v=20260924-public-menu-routing"><\/script>/);
+  assert.match(index, /<script src="\.\/index\.js\?v=20260924-login-upload-routing"><\/script>/);
 });
 
 test("demo uses fixed frontend data without API or database calls", () => {
@@ -145,15 +146,14 @@ test("public index routes receipt analysis to Backend and saved receipts to logi
   assert.match(indexJs, /ADMIN_BASE_URL/);
   assert.match(indexJs, /admin-upload-link/);
   assert.match(indexJs, /login\.html\?returnTo=upload/);
-  assert.match(indexJs, /upload\.html/);
   assert.match(indexJs, /select-link/);
   assert.match(indexJs, /login\.html/);
   assert.match(index, /保存済みレシートを確認する/);
 });
 
 test("admin pages use Backend session authentication and CSRF instead of Referrer guards", () => {
-  assert.match(select, /<script src="\.\/admin-api\.js\?v=20260924-session-auth"><\/script>/);
-  assert.match(html, /<script src="\.\/admin-api\.js"><\/script>/);
+  assert.match(select, /<script src="\.\/admin-api\.js\?v=20261004-admin-only-receipt-api"><\/script>/);
+  assert.match(html, /<script src="\.\/admin-api\.js\?v=20261004-admin-only-receipt-api"><\/script>/);
   assert.doesNotMatch(select + html, /access-guard\.js|document\.referrer|history\.replaceState/);
   assert.match(adminApi, /X-XSRF-TOKEN/);
   assert.match(adminApi, /credentials: "same-origin"/);
@@ -177,4 +177,29 @@ test("select page loads receipt list and detail bubble", () => {
   assert.match(selectJs, /selectedTableNames/);
   assert.match(selectJs, /receiptCount/);
   assert.match(select, /チェックしたレシートを削除/);
+});
+
+test("reFront copies of admin scripts match the files served by Backend", async () => {
+  for (const name of ["app.js", "select.js", "login.js", "admin-api.js", "config.js"]) {
+    const front = await readFile(new URL(`../${name}`, import.meta.url), "utf8");
+    const back = await readFile(new URL(`../../reBack/src/main/resources/static/admin/${name}`, import.meta.url), "utf8");
+    assert.equal(front, back, `${name} differs between reFront and reBack/static/admin`);
+  }
+});
+
+test("admin pages offer logout through the CSRF-protected API", () => {
+  assert.match(html, /id="logout-button"/);
+  assert.match(select, /id="logout-button"/);
+  assert.match(adminApi, /adminFetch\("\/api\/auth\/logout", \{ method: "POST" \}\)/);
+  assert.match(adminApi, /\/admin\/login\.html/);
+});
+
+test("analysis and save send the admin session cookie and CSRF token", () => {
+  assert.match(js, /adminFetch\(`\$\{API_BASE_URL\}\/api\/receipts\/analyze`/);
+  assert.match(js, /return await adminFetch\(url, \{ \.\.\.options, signal: controller\.signal \}\)/);
+  assert.doesNotMatch(js, /credentials: "omit"/);
+  assert.doesNotMatch(js, /(?<!admin)fetch\(/);
+  assert.match(js, /response\.status === 401/);
+  assert.match(js, /管理画面に再度ログインしてください/);
+  assert.ok(html.indexOf("admin-api.js") < html.indexOf("app.js"), "admin-api.js must load before app.js");
 });

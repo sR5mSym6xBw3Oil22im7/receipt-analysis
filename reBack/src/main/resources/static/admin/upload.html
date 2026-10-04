@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="container">
-    <p><a href="https://sr5msym6xbw3oil22im7.github.io/receipt-analysis/reFront/index.html">← メニューへ戻る</a></p>
+    <p class="page-actions"><a href="https://sr5msym6xbw3oil22im7.github.io/receipt-analysis/reFront/index.html">← メニューへ戻る</a><button id="logout-button" class="secondary-button" type="button">ログアウト</button></p>
     <section class="card">
       <h1>レシート解析</h1>
       <p>JPEG / PNG / ZIP のレシート画像を選択し、Gemini APIキーを入力してください。ZIPは複数のレシート画像をまとめて解析できます。ZIPの中身はJPEG/PNGだけにしてください。「解析」は文字抽出と表示だけを行い、PostgreSQLには登録しません。内容を確認後、「PostgreSQLへ保存」を押すと解析結果を保存します。</p>
@@ -37,7 +37,7 @@
     </section>
   </main>
   <script src="./config.js"></script>
-  <script src="./admin-api.js"></script>
-  <script src="./app.js?v=20260827-zip-directories-timeout-210-wait15"></script>
+  <script src="./admin-api.js?v=20261004-admin-only-receipt-api"></script>
+  <script src="./app.js?v=20261004-admin-only-receipt-api"></script>
 </body>
 </html>

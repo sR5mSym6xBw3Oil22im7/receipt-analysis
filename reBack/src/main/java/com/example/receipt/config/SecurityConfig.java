@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.Authentication;
@@ -75,9 +74,8 @@ public class SecurityConfig {
                         }))
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/health", "/api/auth/csrf", "/api/auth/login", "/api/auth/session", "/admin/login.html", "/admin/login.js", "/admin/upload.html", "/admin/app.js", "/admin/styles.css", "/admin/config.js", "/admin/admin-api.js").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/receipts/analyze").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/receipts/save").permitAll()
+                        .requestMatchers("/api/health", "/api/auth/csrf", "/api/auth/login", "/api/auth/session", "/admin/login.html", "/admin/login.js", "/admin/styles.css", "/admin/config.js", "/admin/admin-api.js").permitAll()
+                        // 解析・保存・一覧・詳細・削除はすべて管理者限定（メソッドを問わない）
                         .requestMatchers("/api/receipts", "/api/receipts/**").hasRole("ADMIN")
                         .requestMatchers("/api/auth/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")

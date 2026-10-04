@@ -68,6 +68,8 @@ public class AuthController {
             context.setAuthentication(result);
             SecurityContextHolder.setContext(context);
             securityContextRepository.saveContext(context, request, response);
+            // ログイン前に発行したCSRFトークンを破棄し、次の更新要求で新しいトークンを取得させる
+            csrfTokenRepository.saveToken(null, request, response);
             return ResponseEntity.ok(Map.of("redirect", "/admin/select.html"));
         } catch (AuthenticationException exception) {
             SecurityContextHolder.clearContext();

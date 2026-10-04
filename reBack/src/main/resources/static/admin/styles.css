@@ -199,3 +199,5 @@ pre {
   .demo-workspace { grid-template-columns: 1fr; }
   .demo-action-panel { padding: 16px; }
 }
+
+.page-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }

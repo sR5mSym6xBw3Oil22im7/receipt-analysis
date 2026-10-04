@@ -11,3 +11,11 @@ async function adminFetch(input, options = {}) {
   }
   return fetch(requestUrl, { ...options, method, headers, credentials: "same-origin" });
 }
+
+document.getElementById("logout-button")?.addEventListener("click", async () => {
+  try {
+    await adminFetch("/api/auth/logout", { method: "POST" });
+  } finally {
+    window.location.assign("/admin/login.html");
+  }
+});

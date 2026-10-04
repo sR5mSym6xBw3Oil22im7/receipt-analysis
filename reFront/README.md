@@ -7,7 +7,7 @@ reFront/には利用者向けの静的ページとブラウザー側のJavaScrip
 - index.html — デモ、解析、保存済みレシート確認への入口
 - demo.html — 固定サンプルを使うAPIキー不要のデモ
 
-管理者ログイン、画像解析、保存済みレシート管理のHTMLはreBackのstatic/adminから配信されます。
+管理者ログイン、画像解析、保存済みレシート管理のHTMLはreBackのstatic/adminから配信されます。画像解析と保存済みレシート管理は管理者ログインが必要です。app.js、select.js、login.js、admin-api.jsはreBack/src/main/resources/static/admin/の同名ファイルと同じ内容に保ってください（test/smoke.test.mjsはreFront側を検査します）。
 
 ## ローカル利用
 

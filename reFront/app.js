@@ -22,6 +22,12 @@ const API_KEY_RETRY_CODES = new Set([
   "INVALID_GEMINI_API_KEY"
 ]);
 
+function responseErrorMessage(response, body) {
+  if (response.status === 401) return "ログインの有効期限が切れました。管理画面に再度ログインしてください。";
+  if (response.status === 403) return "この操作を行う権限がないか、画面の有効期限が切れています。ページを再読み込みしてください。";
+  return body.message || `HTTP ${response.status}`;
+}
+
 function hasPendingReceipts() {
   return analysisReady && analyzedReceipts.some((receipt) => !receipt.stored);
 }
@@ -130,10 +136,9 @@ async function analyzeReceipt(formData, fileNumber) {
   const timeoutId = setTimeout(() => controller.abort(), ANALYZE_REQUEST_TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/receipts/analyze`, {
+    const response = await adminFetch(`${API_BASE_URL}/api/receipts/analyze`, {
       method: "POST",
       body: formData,
-      credentials: "omit",
       signal: controller.signal
     });
     const body = await response.json().catch((error) => {
@@ -269,7 +274,7 @@ async function fetchSaveApi(url, options) {
   const timeoutId = setTimeout(() => controller.abort(), SAVE_REQUEST_TIMEOUT_MS);
 
   try {
-    return await fetch(url, { ...options, credentials: "omit", signal: controller.signal });
+    return await adminFetch(url, { ...options, signal: controller.signal });
   } catch (error) {
     if (error?.name === "AbortError") {
       const timeoutError = new Error(
@@ -298,7 +303,7 @@ async function saveReceipt(lines, sha256, structuredData) {
   });
   const body = await readJsonResponse(response);
   if (!response.ok) {
-    const error = new Error(body.message || `HTTP ${response.status}`);
+    const error = new Error(responseErrorMessage(response, body));
     error.code = body.code || "";
     error.httpStatus = response.status;
     throw error;
@@ -384,7 +389,7 @@ form.addEventListener("submit", async (event) => {
         clearInterval(waitMessageTimer);
       }
       if (!analyzeResponse.ok) {
-        const error = new Error(body.message || `HTTP ${analyzeResponse.status}`);
+        const error = new Error(responseErrorMessage(analyzeResponse, body));
         error.code = body.code || "";
         error.httpStatus = analyzeResponse.status;
         error.fileNumber = fileNumber;
