@@ -19,3 +19,8 @@ document.getElementById("logout-button")?.addEventListener("click", async () => 
     window.location.assign("/admin/login.html");
   }
 });
+
+const menuBackLink = document.getElementById("back-link");
+if (menuBackLink && window.APP_CONFIG?.PUBLIC_BASE_URL) {
+  menuBackLink.href = window.APP_CONFIG.PUBLIC_BASE_URL;
+}

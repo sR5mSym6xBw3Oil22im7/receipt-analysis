@@ -7,9 +7,13 @@ const backendBaseUrl = isLocalFrontend
   ? "http://localhost:8081"
   : "https://receipt-analysis-b8po.onrender.com";
 
+const publicBaseUrl = isLocalFrontend
+  ? "http://localhost:5500/index.html"
+  : "https://sr5msym6xbw3oil22im7.github.io/receipt-analysis/reFront/index.html";
+
 window.APP_CONFIG = {
   API_BASE_URL: backendBaseUrl,
   ADMIN_BASE_URL: `${backendBaseUrl}/admin`,
   SELECT_URL: `${backendBaseUrl}/admin/select.html`,
-  PUBLIC_BASE_URL: "https://sr5msym6xbw3oil22im7.github.io/receipt-analysis/reFront/index.html"
+  PUBLIC_BASE_URL: publicBaseUrl
 };
