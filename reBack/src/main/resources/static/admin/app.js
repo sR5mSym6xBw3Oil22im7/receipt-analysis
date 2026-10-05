@@ -54,6 +54,7 @@ function resetUploadPagePreservingApiKey() {
     input.value = "";
     const nameElement = document.getElementById(`receipt-file-name-${index + 1}`);
     nameElement.classList.remove("error-message");
+    nameElement.classList.add("is-empty");
     nameElement.textContent = "未選択";
   });
 
@@ -80,11 +81,13 @@ fileInputs.forEach((input, index) => {
     const nameElement = document.getElementById(`receipt-file-name-${index + 1}`);
     if (!selectedFile) {
       nameElement.classList.remove("error-message");
+      nameElement.classList.add("is-empty");
       nameElement.textContent = "未選択";
       return;
     }
 
     nameElement.classList.remove("error-message");
+    nameElement.classList.remove("is-empty");
     nameElement.textContent = selectedFile.name;
   });
 });
@@ -315,14 +318,16 @@ function renderReceiptResults(receipts) {
   receiptResultsElement.replaceChildren();
   receipts.forEach((receipt, index) => {
     const result = document.createElement("article");
-    result.className = "receipt-result";
+    result.className = receipt.stored ? "receipt-result is-saved" : "receipt-result";
     const heading = document.createElement("h3");
     heading.textContent = `レシート画像${receipt.fileNumber ?? index + 1}`;
     const text = document.createElement("pre");
     text.textContent = receipt.lines.join("\n");
+    const foot = document.createElement("div");
+    foot.className = "paper-foot";
+    foot.innerHTML = '<span class="paper-thanks">THANK YOU!</span><span class="paper-barcode" aria-hidden="true"></span>';
 
-    result.append(heading);
-    result.append(text);
+    result.append(heading, text, foot);
     receiptResultsElement.append(result);
   });
 }

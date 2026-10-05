@@ -28,7 +28,12 @@ function showDetail(detail) {
   for (const line of detail.lines ?? []) {
     const lineElement = document.createElement("p");
     lineElement.className = "receipt-line";
-    lineElement.textContent = `${line.lineNo}. ${line.text}`;
+    const lineNo = document.createElement("span");
+    lineNo.className = "line-no";
+    lineNo.textContent = String(line.lineNo);
+    const lineText = document.createElement("span");
+    lineText.textContent = line.text;
+    lineElement.append(lineNo, lineText);
     detailBubble.append(lineElement);
   }
   detailPanel.classList.remove("hidden");
