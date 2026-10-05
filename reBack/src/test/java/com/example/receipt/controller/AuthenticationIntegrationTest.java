@@ -116,6 +116,24 @@ class AuthenticationIntegrationTest {
     }
 
     @Test
+    void repeatedLoginFailuresLockTheAccountEvenForCorrectPassword() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/api/auth/login").with(csrfToken())
+                            .contentType("application/json")
+                            .content("{\"username\":\"lock-test-admin\",\"password\":\"wrong\"}"))
+                    .andExpect(status().isUnauthorized());
+        }
+        mockMvc.perform(post("/api/auth/login").with(csrfToken())
+                        .contentType("application/json")
+                        .content("{\"username\":\"lock-test-admin\",\"password\":\"password\"}"))
+                .andExpect(status().isTooManyRequests());
+        mockMvc.perform(post("/api/auth/login").with(csrfToken())
+                        .contentType("application/json")
+                        .content("{\"username\":\"test-admin\",\"password\":\"password\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void sessionStatusIsPublicAndAnonymousStateIsFalse() throws Exception {
         mockMvc.perform(get("/api/auth/session"))
                 .andExpect(status().isOk())
@@ -157,10 +175,10 @@ class AuthenticationIntegrationTest {
         @Bean
         @Primary
         UserDetailsService testUserDetailsService() {
-            return new InMemoryUserDetailsManager(User.withUsername("test-admin")
-                    .password(new BCryptPasswordEncoder().encode("password"))
-                    .roles("ADMIN")
-                    .build());
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            return new InMemoryUserDetailsManager(
+                    User.withUsername("test-admin").password(encoder.encode("password")).roles("ADMIN").build(),
+                    User.withUsername("lock-test-admin").password(encoder.encode("password")).roles("ADMIN").build());
         }
     }
 }

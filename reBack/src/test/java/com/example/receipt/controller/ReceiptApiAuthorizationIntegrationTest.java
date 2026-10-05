@@ -247,6 +247,13 @@ class ReceiptApiAuthorizationIntegrationTest {
     }
 
     @Test
+    void undeclaredApiPathIsDeniedEvenForAdmin() throws Exception {
+        mockMvc.perform(get("/api/undeclared")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/undeclared").session(loginAsAdmin())).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/health")).andExpect(status().isOk());
+    }
+
+    @Test
     void uploadPageAndScriptRequireAdminLogin() throws Exception {
         mockMvc.perform(get("/admin/upload.html")).andExpect(redirectedUrl("/admin/login.html"));
         mockMvc.perform(get("/admin/app.js")).andExpect(redirectedUrl("/admin/login.html"));

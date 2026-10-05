@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.AuthenticationException;
+import com.example.receipt.service.LoginAttemptLimiter;
 
 import java.util.Map;
 
@@ -27,13 +28,16 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
     private final CsrfTokenRepository csrfTokenRepository;
+    private final LoginAttemptLimiter loginAttemptLimiter;
 
     public AuthController(AuthenticationManager authenticationManager,
                           SecurityContextRepository securityContextRepository,
-                          CsrfTokenRepository csrfTokenRepository) {
+                          CsrfTokenRepository csrfTokenRepository,
+                          LoginAttemptLimiter loginAttemptLimiter) {
         this.authenticationManager = authenticationManager;
         this.securityContextRepository = securityContextRepository;
         this.csrfTokenRepository = csrfTokenRepository;
+        this.loginAttemptLimiter = loginAttemptLimiter;
     }
 
     @GetMapping("/csrf")
@@ -59,9 +63,15 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest login,
                                                      HttpServletRequest request,
                                                      HttpServletResponse response) {
+        // ロック中は正しいパスワードでも認証処理を行わない
+        if (loginAttemptLimiter.isLocked(login.username())) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("message", "ログインの失敗が続いたため、しばらくしてから再度お試しください。"));
+        }
         try {
             Authentication result = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(login.username(), login.password()));
+            loginAttemptLimiter.recordSuccess(login.username());
             request.getSession(true);
             request.changeSessionId();
             SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -72,6 +82,7 @@ public class AuthController {
             csrfTokenRepository.saveToken(null, request, response);
             return ResponseEntity.ok(Map.of("redirect", "/admin/select.html"));
         } catch (AuthenticationException exception) {
+            loginAttemptLimiter.recordFailure(login.username());
             SecurityContextHolder.clearContext();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "ユーザーIDまたはパスワードが正しくありません。"));
         }

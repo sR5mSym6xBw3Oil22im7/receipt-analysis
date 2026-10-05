@@ -22,9 +22,10 @@
 
 ## ローカル起動
 
-必要環境はJava 21、Maven、PostgreSQLです。application.ymlのDB既定値はlocalhost:5432/receipt_db、ユーザー名・パスワードはpostgresです。管理者IDとBCryptパスワードハッシュを環境変数に設定してください。
+必要環境はJava 21、Maven、PostgreSQLです。application.ymlのDB既定値はlocalhost:5432/receipt_db、ユーザー名はpostgresです。DBパスワード（DB_PASSWORD）には既定値がないため、管理者IDとBCryptパスワードハッシュとあわせて環境変数に設定してください。
 
 ~~~sh
+export DB_PASSWORD='<ローカルDBのパスワード>'
 export ADMIN_USERNAME=admin
 export ADMIN_PASSWORD_HASH='<BCrypt形式のハッシュ>'
 cd reBack

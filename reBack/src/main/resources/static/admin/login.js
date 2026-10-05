@@ -11,7 +11,13 @@ form.addEventListener("submit", async (event) => {
       body: JSON.stringify({ username: form.elements.username.value, password: form.elements.password.value })
     });
     if (!response.ok) {
-      status.textContent = response.status === 401 ? "ユーザーIDまたはパスワードが正しくありません。" : `ログインできませんでした (HTTP ${response.status})`;
+      if (response.status === 401) {
+        status.textContent = "ユーザーIDまたはパスワードが正しくありません。";
+      } else if (response.status === 429) {
+        status.textContent = "ログインの失敗が続いたため、しばらくしてから再度お試しください。";
+      } else {
+        status.textContent = `ログインできませんでした (HTTP ${response.status})`;
+      }
       return;
     }
     const result = await response.json();

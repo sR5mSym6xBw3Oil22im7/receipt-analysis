@@ -78,6 +78,8 @@ public class SecurityConfig {
                         // 解析・保存・一覧・詳細・削除はすべて管理者限定（メソッドを問わない）
                         .requestMatchers("/api/receipts", "/api/receipts/**").hasRole("ADMIN")
                         .requestMatchers("/api/auth/**").authenticated()
+                        // 上記以外の/api配下は既定で拒否し、新規APIが意図せず公開されないようにする
+                        .requestMatchers("/api/**").denyAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().permitAll())
                 .exceptionHandling(errors -> errors

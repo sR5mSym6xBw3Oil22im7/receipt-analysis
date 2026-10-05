@@ -161,7 +161,7 @@ test("admin pages use Backend session authentication and CSRF instead of Referre
   assert.match(loginJs, /returnTo === "upload"/);
   assert.match(loginJs, /\/admin\/upload\.html/);
   assert.match(loginJs, /\/admin\/select\.html/);
-  assert.doesNotMatch(loginJs, /edix/);
+  assert.doesNotMatch(loginJs, /\.value\s*===?\s*["']/);
 });
 
 test("select page loads receipt list and detail bubble", () => {

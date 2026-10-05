@@ -15,7 +15,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:receipt_db}
     username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   servlet:
     multipart:
@@ -31,6 +31,8 @@ app:
     admin-username: ${ADMIN_USERNAME}
     admin-password-hash: ${ADMIN_PASSWORD_HASH}
     cookie-secure: ${SESSION_COOKIE_SECURE:true}
+    login-max-failures: ${LOGIN_MAX_FAILURES:5}
+    login-lock-minutes: ${LOGIN_LOCK_MINUTES:15}
 
 gemini:
   receipt-model: gemini-3.5-flash-lite
