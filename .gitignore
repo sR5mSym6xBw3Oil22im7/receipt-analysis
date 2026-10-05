@@ -32,3 +32,6 @@
 *.accdb
 # Office temp files
 ~$*
+
+# Local environment variables
+.env
