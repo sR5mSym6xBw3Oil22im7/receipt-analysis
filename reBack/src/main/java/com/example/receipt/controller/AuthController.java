@@ -63,15 +63,24 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest login,
                                                      HttpServletRequest request,
                                                      HttpServletResponse response) {
-        // ロック中は正しいパスワードでも認証処理を行わない
-        if (loginAttemptLimiter.isLocked(login.username())) {
+        // 照合前に試行枠を確保する。ロック中や同時試行が上限に達している場合は、正しいパスワードでも照合しない
+        LoginAttemptLimiter.Attempt attempt = loginAttemptLimiter.tryBegin(login.username());
+        if (attempt == null) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("message", "ログインの失敗が続いたため、しばらくしてから再度お試しください。"));
         }
-        try {
-            Authentication result = authenticationManager.authenticate(
-                    UsernamePasswordAuthenticationToken.unauthenticated(login.username(), login.password()));
-            loginAttemptLimiter.recordSuccess(login.username());
+        // 予期しない例外で抜けた場合も、closeで試行枠を返す
+        try (attempt) {
+            Authentication result;
+            try {
+                result = authenticationManager.authenticate(
+                        UsernamePasswordAuthenticationToken.unauthenticated(login.username(), login.password()));
+            } catch (AuthenticationException exception) {
+                attempt.failed();
+                SecurityContextHolder.clearContext();
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "ユーザーIDまたはパスワードが正しくありません。"));
+            }
+            attempt.succeeded();
             request.getSession(true);
             request.changeSessionId();
             SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -81,10 +90,6 @@ public class AuthController {
             // ログイン前に発行したCSRFトークンを破棄し、次の更新要求で新しいトークンを取得させる
             csrfTokenRepository.saveToken(null, request, response);
             return ResponseEntity.ok(Map.of("redirect", "/admin/select.html"));
-        } catch (AuthenticationException exception) {
-            loginAttemptLimiter.recordFailure(login.username());
-            SecurityContextHolder.clearContext();
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "ユーザーIDまたはパスワードが正しくありません。"));
         }
     }
 
