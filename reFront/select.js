@@ -9,6 +9,8 @@ const closeDetail = document.getElementById("close-detail");
 const deleteSelectedButton = document.getElementById("delete-selected");
 const selectedTableNames = new Set();
 let receiptCount = 0;
+let openTableName = "";
+const ROSE_ICON = '<svg aria-hidden="true" viewBox="-50 -50 100 100"><use href="#rose"/></svg>';
 
 function configureBackLink() {
   backLink.href = window.APP_CONFIG?.PUBLIC_BASE_URL ?? "https://sr5msym6xbw3oil22im7.github.io/";
@@ -22,17 +24,41 @@ function formatDate(value) {
   return value ? new Date(value).toLocaleString("ja-JP") : "日時不明";
 }
 
+function makeBadge(text, className = "") {
+  const badge = document.createElement("span");
+  badge.className = `badge ${className}`.trim();
+  badge.textContent = text;
+  return badge;
+}
+
 function showDetail(detail) {
-  detailMeta.textContent = `${detail.tableName} / ${detail.lineCount}行 / ${formatDate(detail.createdAt)}`;
+  openTableName = detail.tableName;
+  detailMeta.replaceChildren(
+    makeBadge(detail.tableName, "is-rose"),
+    makeBadge(`${detail.lineCount}行`),
+    makeBadge(formatDate(detail.createdAt))
+  );
   detailBubble.replaceChildren();
   for (const line of detail.lines ?? []) {
     const lineElement = document.createElement("p");
     lineElement.className = "receipt-line";
-    lineElement.textContent = `${line.lineNo}. ${line.text}`;
+    const lineNo = document.createElement("span");
+    lineNo.className = "line-no";
+    lineNo.textContent = `${line.lineNo}.`;
+    const lineText = document.createElement("span");
+    lineText.textContent = line.text;
+    lineElement.append(lineNo, lineText);
     detailBubble.append(lineElement);
   }
   detailPanel.classList.remove("hidden");
+  markOpenRow();
   detailPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function markOpenRow() {
+  for (const row of receiptList.querySelectorAll(".receipt-row")) {
+    row.classList.toggle("is-open", row.dataset.tableName === openTableName);
+  }
 }
 
 async function openDetail(tableName) {
@@ -51,13 +77,20 @@ function renderList(receipts) {
   receiptList.replaceChildren();
   if (!receipts.length) {
     listStatus.textContent = "保存済みのレシートはありません。";
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerHTML = `${ROSE_ICON}<span>レシートを解析・保存すると、ここに表示されます。</span>`;
+    receiptList.append(empty);
     updateDeleteSelectedButton();
     return;
   }
   listStatus.textContent = `${receipts.length}件のレシートがあります。`;
   for (const receipt of receipts) {
     const row = document.createElement("div");
-    row.className = "receipt-list-row";
+    row.className = "receipt-row";
+    row.dataset.tableName = receipt.tableName;
+    row.classList.toggle("is-checked", selectedTableNames.has(receipt.tableName));
+    row.classList.toggle("is-open", receipt.tableName === openTableName);
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.setAttribute("aria-label", `${receipt.tableName}を選択`);
@@ -68,24 +101,30 @@ function renderList(receipts) {
       } else {
         selectedTableNames.delete(receipt.tableName);
       }
+      row.classList.toggle("is-checked", checkbox.checked);
       updateDeleteSelectedButton();
     });
+    const icon = document.createElement("span");
+    icon.className = "row-icon";
+    icon.innerHTML = ROSE_ICON;
     const title = document.createElement("strong");
     title.textContent = receipt.tableName;
     const meta = document.createElement("span");
-    meta.textContent = `${receipt.lineCount}行 / ${formatDate(receipt.createdAt)}`;
+    meta.className = "row-meta";
+    const lineCount = document.createElement("span");
+    lineCount.textContent = `${receipt.lineCount}行`;
+    const createdAt = document.createElement("span");
+    createdAt.textContent = formatDate(receipt.createdAt);
+    meta.append(lineCount, createdAt);
+    const info = document.createElement("div");
+    info.className = "row-info";
+    info.append(title, meta);
     const referenceButton = document.createElement("button");
     referenceButton.type = "button";
-    referenceButton.className = "secondary-button";
+    referenceButton.className = "secondary-button small-button";
     referenceButton.textContent = "参照";
     referenceButton.addEventListener("click", () => openDetail(receipt.tableName));
-    const info = document.createElement("div");
-    info.className = "receipt-list-info";
-    info.append(title, meta);
-    const actions = document.createElement("div");
-    actions.className = "button-row";
-    actions.append(referenceButton);
-    row.append(checkbox, info, actions);
+    row.append(checkbox, icon, info, referenceButton);
     receiptList.append(row);
   }
   updateDeleteSelectedButton();
@@ -107,6 +146,7 @@ async function deleteSelectedReceipts() {
       selectedTableNames.delete(tableName);
     }
     detailPanel.classList.add("hidden");
+    openTableName = "";
     listStatus.textContent = `${tableNames.length}件のレシートを削除しました。`;
     await loadReceipts();
   } catch (error) {
@@ -126,7 +166,11 @@ async function loadReceipts() {
   }
 }
 
-closeDetail.addEventListener("click", () => detailPanel.classList.add("hidden"));
+closeDetail.addEventListener("click", () => {
+  detailPanel.classList.add("hidden");
+  openTableName = "";
+  markOpenRow();
+});
 deleteSelectedButton.addEventListener("click", deleteSelectedReceipts);
 updateDeleteSelectedButton();
 configureBackLink();

@@ -10,6 +10,14 @@ const receiptResultsElement = document.getElementById("receipt-results");
 let analyzedReceipts = [];
 let analysisReady = false;
 let busy = false;
+const stepItems = [...document.querySelectorAll("#steps li")];
+
+function setStep(index) {
+  stepItems.forEach((item, i) => {
+    item.classList.toggle("is-done", i < index);
+    item.classList.toggle("is-active", i === index);
+  });
+}
 
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL ?? "http://localhost:8081";
 const ANALYZE_REQUEST_TIMEOUT_MS = 210000;
@@ -44,6 +52,7 @@ function invalidateAnalysis() {
   receiptResultsElement.replaceChildren();
   resultCard.classList.add("hidden");
   statusElement.textContent = "";
+  setStep(0);
   updateSaveButton();
 }
 
@@ -54,6 +63,7 @@ function resetUploadPagePreservingApiKey() {
     input.value = "";
     const nameElement = document.getElementById(`receipt-file-name-${index + 1}`);
     nameElement.classList.remove("error-message");
+    nameElement.classList.add("is-empty");
     nameElement.textContent = "未選択";
   });
 
@@ -70,6 +80,7 @@ function resetUploadPagePreservingApiKey() {
   saveButton.disabled = true;
   saveButton.classList.add("hidden");
   saveButton.textContent = "PostgreSQLへ保存";
+  setStep(0);
 }
 
 fileInputs.forEach((input, index) => {
@@ -80,11 +91,13 @@ fileInputs.forEach((input, index) => {
     const nameElement = document.getElementById(`receipt-file-name-${index + 1}`);
     if (!selectedFile) {
       nameElement.classList.remove("error-message");
+      nameElement.classList.add("is-empty");
       nameElement.textContent = "未選択";
       return;
     }
 
     nameElement.classList.remove("error-message");
+    nameElement.classList.remove("is-empty");
     nameElement.textContent = selectedFile.name;
   });
 });
@@ -315,14 +328,12 @@ function renderReceiptResults(receipts) {
   receiptResultsElement.replaceChildren();
   receipts.forEach((receipt, index) => {
     const result = document.createElement("article");
-    result.className = "receipt-result";
+    result.className = receipt.stored ? "receipt-result is-saved" : "receipt-result";
     const heading = document.createElement("h3");
     heading.textContent = `レシート画像${receipt.fileNumber ?? index + 1}`;
     const text = document.createElement("pre");
     text.textContent = receipt.lines.join("\n");
-
-    result.append(heading);
-    result.append(text);
+    result.append(heading, text);
     receiptResultsElement.append(result);
   });
 }
@@ -369,6 +380,7 @@ form.addEventListener("submit", async (event) => {
   }
 
   setBusy("analyze");
+  setStep(1);
   statusElement.textContent = "";
 
   try {
@@ -409,9 +421,11 @@ form.addEventListener("submit", async (event) => {
     }
 
     analysisReady = true;
+    setStep(2);
     statusElement.textContent = `${analyzedReceipts.length}枚の解析が完了しました。`;
   } catch (error) {
     analysisReady = false;
+    setStep(0);
     if (API_KEY_RETRY_CODES.has(error.code)) {
       showApiKeyRetry(error.code, error.message);
     } else {
@@ -438,6 +452,7 @@ saveButton.addEventListener("click", async () => {
 
   statusElement.classList.remove("error-message");
   setBusy("save");
+  setStep(3);
   statusElement.textContent = "";
 
   let saveCompleted = false;
@@ -469,6 +484,7 @@ saveButton.addEventListener("click", async () => {
       resetUploadPagePreservingApiKey();
     } else {
       // 保存失敗時は解析結果と保存ボタンを残し、再試行できるようにする。
+      setStep(2);
       setBusy(null);
     }
   }

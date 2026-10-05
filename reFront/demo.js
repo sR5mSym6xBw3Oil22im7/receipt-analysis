@@ -44,11 +44,7 @@ function renderDemoResult() {
   const text = document.createElement("pre");
   text.textContent = buildDemoLines().join("\n");
 
-  const foot = document.createElement("div");
-  foot.className = "paper-foot";
-  foot.innerHTML = '<span class="paper-thanks">THANK YOU!</span><span class="paper-barcode" aria-hidden="true"></span>';
-
-  result.append(heading, text, foot);
+  result.append(heading, text);
   resultElement.replaceChildren(result);
   resultCard.classList.remove("hidden");
 }
