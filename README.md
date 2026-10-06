@@ -1,47 +1,75 @@
 # レシート解析システム
 
-レシート画像を解析し、結果を確認してPostgreSQLへ保存するWebシステムです。サンプルデータで動作を確認できるデモ画面もあります。
+レシート画像をGoogle Gemini APIで解析し、読み取った文字列を確認してからPostgreSQLへ保存するWebシステムです。Gemini APIを呼び出さずに画面の流れを確認できるデモもあります。
 
 ## 機能
 
-- JPEG/PNG画像のGemini解析
-- 解析テキストと店舗・商品情報の表示
-- 解析結果のPostgreSQL保存
-- 保存済みレシートの一覧・詳細・削除
-- Gemini APIを呼び出さない固定データのデモ
+| 機能 | 利用者 | 内容 |
+| --- | --- | --- |
+| デモ | だれでも | 架空のレシート画像と固定データで解析結果を表示します。Gemini API・バックエンド・DBは呼び出しません。 |
+| ログイン | 管理者 | ユーザーIDとパスワードでログインします。 |
+| レシート解析 | 管理者 | JPEG / PNG画像をGeminiで解析し、行ごとの文字列と構造化データ（店舗名、購入日時、合計金額、商品など）を返します。JPEG / PNGだけを含むZIPは、ブラウザーで展開して1枚ずつ解析します。 |
+| 保存 | 管理者 | 解析結果をPostgreSQLへ保存します。同じ画像（SHA-256が一致）は再登録できません。 |
+| 一覧・詳細・削除 | 管理者 | 保存済みレシートの一覧、行ごとの文字列の表示、削除を行います。 |
 
-デモ以外の解析・保存・一覧・詳細・削除は、ログイン済みの管理者だけがAPIから実行できます（Spring Securityでバックエンド側を制御）。
+「解析」だけではDBに登録しません。結果を確認して「PostgreSQLへ保存」を押したときに保存します。
 
-解析画像は1ファイル5 MiBまでです。解析に使うGemini APIキーは画面から要求ごとに渡します。画像ファイルそのものを保存する処理はありません。同じ画像の再登録はSHA-256で検出します。
+## データの扱い
+
+- 画像ファイルそのものは保存しません。重複判定に使うSHA-256、読み取った文字列、構造化データを保存します。
+- Gemini APIキーは解析のたびに画面で入力し、サーバー設定やDBには保存しません。
+- 解析・保存・一覧・詳細・削除のAPIは、バックエンドのSpring Securityで管理者（ROLE_ADMIN）だけに制限しています。
 
 ## 構成
 
-- reFront/ — 利用者向けページとブラウザー側処理
-- reBack/ — Java 21 / Spring Boot API、テスト、Dockerfile
-- doc/ — [開発文書目次](doc/index.html)
+| パス | 内容 |
+| --- | --- |
+| `reFront/` | メニューとデモの静的ページ（HTML / CSS / JavaScript）。詳細は [reFront/README.md](reFront/README.md) |
+| `reBack/` | Java 21 / Spring Boot のREST API、管理画面（ログイン・解析・一覧）、テスト、Dockerfile、render.yml。詳細は [reBack/README.md](reBack/README.md) |
+| `index.html` | `reFront/index.html` へ転送するページ |
 
-## ローカル起動
+管理画面のHTMLはバックエンド（`reBack/src/main/resources/static/admin/`）から配信します。メニューの「レシートを解析」「保存済みレシートを確認する」は、バックエンドのログイン画面へ移動します。
 
-必要環境はJava 21、Maven、PostgreSQLです。application.ymlのDB既定値はlocalhost:5432/receipt_db、ユーザー名はpostgresです。DBパスワード（DB_PASSWORD）には既定値がないため、管理者IDとBCryptパスワードハッシュとあわせて環境変数に設定してください。
+## ローカルでの起動
 
-~~~sh
-export DB_PASSWORD='<ローカルDBのパスワード>'
-export ADMIN_USERNAME=admin
-export ADMIN_PASSWORD_HASH='<BCrypt形式のハッシュ>'
-cd reBack
-mvn spring-boot:run -Dspring-boot.run.profiles=local
-~~~
+必要なもの：Java 21、Maven、PostgreSQL。フロントエンドのテストにはNode.jsも必要です。
 
-DB接続先はDB_HOST、DB_PORT、DB_NAME、DB_USER、DB_PASSWORDで変更できます。ローカル起動後、reFront/index.htmlをブラウザーで開きます。Gemini解析には有効なAPIキーの入力が必要です。デモはAPIキーなしで利用できます。
+1. PostgreSQLにデータベースを用意します（既定値は `localhost:5432/receipt_db`、ユーザー `postgres`）。テーブルはアプリが実行時に作成します。
+2. 環境変数を設定してバックエンドを起動します。`ADMIN_PASSWORD_HASH` にはBCrypt形式のハッシュを設定します。
+
+   ```sh
+   export DB_PASSWORD='<ローカルDBのパスワード>'
+   export ADMIN_USERNAME=admin
+   export ADMIN_PASSWORD_HASH='<BCrypt形式のハッシュ>'
+   cd reBack
+   mvn spring-boot:run -Dspring-boot.run.profiles=local
+   ```
+
+3. `reFront/index.html` をブラウザーで開きます。ファイルとして開いた場合やlocalhostで開いた場合、接続先は `http://localhost:8081` になります。
+
+環境変数の一覧は [reBack/README.md](reBack/README.md) を参照してください。
 
 ## テスト
 
-~~~sh
+```sh
+# バックエンド（テスト用にH2データベースを使用）
 cd reBack
 mvn test
-~~~
 
-## 関連README
+# フロントエンドのスモークテスト（リポジトリ直下で実行）
+node --test reFront/test/smoke.test.mjs
+```
 
-- reFront/README.md — フロントエンド画面
-- reBack/README.md — API、設定、テスト
+## 公開環境
+
+`reFront/config.js` は、localhost以外で開かれた場合に次の接続先を使います。
+
+- バックエンド：`https://receipt-analysis-b8po.onrender.com`
+- フロントエンド：`https://sr5msym6xbw3oil22im7.github.io/receipt-analysis/reFront/index.html`
+
+バックエンドとPostgreSQLのRender向け構成は `reBack/render.yml` に定義されています。
+
+## 注意事項
+
+- 本番ではHTTPSを使い、`SESSION_COOKIE_SECURE` を有効にしてください（既定値は `true`）。
+- Gemini APIキー、管理者のパスワードハッシュ、DB接続情報をリポジトリに含めないでください。`.env` はGitの管理対象外です。
