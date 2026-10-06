@@ -10,7 +10,8 @@ const deleteSelectedButton = document.getElementById("delete-selected");
 const selectedTableNames = new Set();
 let receiptCount = 0;
 let openTableName = "";
-const ROSE_ICON = '<svg aria-hidden="true" viewBox="-50 -50 100 100"><use href="#rose"/></svg>';
+const COIN_ICON = '<svg aria-hidden="true"><use href="#gd" width="34" height="34"/></svg>';
+const EMPTY_ICON = '<svg width="56" height="56" aria-hidden="true"><use href="#gd" width="56" height="56"/></svg>';
 
 function configureBackLink() {
   backLink.href = window.APP_CONFIG?.PUBLIC_BASE_URL ?? "https://sr5msym6xbw3oil22im7.github.io/";
@@ -34,7 +35,7 @@ function makeBadge(text, className = "") {
 function showDetail(detail) {
   openTableName = detail.tableName;
   detailMeta.replaceChildren(
-    makeBadge(detail.tableName, "is-rose"),
+    makeBadge(detail.tableName, "is-accent"),
     makeBadge(`${detail.lineCount}行`),
     makeBadge(formatDate(detail.createdAt))
   );
@@ -79,7 +80,7 @@ function renderList(receipts) {
     listStatus.textContent = "保存済みのレシートはありません。";
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.innerHTML = `${ROSE_ICON}<span>レシートを解析・保存すると、ここに表示されます。</span>`;
+    empty.innerHTML = `${EMPTY_ICON}<span>レシートを解析・保存すると、ここに表示されます。</span>`;
     receiptList.append(empty);
     updateDeleteSelectedButton();
     return;
@@ -106,7 +107,7 @@ function renderList(receipts) {
     });
     const icon = document.createElement("span");
     icon.className = "row-icon";
-    icon.innerHTML = ROSE_ICON;
+    icon.innerHTML = COIN_ICON;
     const title = document.createElement("strong");
     title.textContent = receipt.tableName;
     const meta = document.createElement("span");

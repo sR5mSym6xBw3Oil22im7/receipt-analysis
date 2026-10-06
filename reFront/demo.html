@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
   <title>レシート解析 デモ</title>
-  <link rel="stylesheet" href="./styles.css?v=20261006-arch-window">
+  <link rel="stylesheet" href="./styles.css?v=20261006-no-kinun">
 </head>
 <body>
   <main class="container">
     <p class="page-actions"><a class="back-link" href="./index.html">← メニューへ戻る</a></p>
     <section class="card page-header">
-      <div class="glass-window" data-window="small" data-seed="21" data-tint="#9fd1c2"></div>
+      <div class="motif" data-motif="small" data-seed="21"></div>
       <div>
         <p class="eyebrow">Demo · APIキー不要 / 固定データ</p>
         <h1>レシート解析 デモ</h1>
-        <div class="flourish is-left"><svg aria-hidden="true" viewBox="-50 -50 100 100"><use href="#rose"/></svg></div>
+        <div class="flourish is-left"><svg aria-hidden="true"><use href="#gd" width="28" height="28"/></svg></div>
         <p>このデモではGemini APIを呼び出さず、あらかじめ用意したサンプルデータを使用します。Gemini APIキーは必要ありません。</p>
         <div class="note" role="note">
           <strong>デモについて</strong>
@@ -43,12 +43,12 @@
 
     <section id="demo-result-card" class="card hidden" aria-live="polite">
       <h2>解析結果</h2>
-      <div class="flourish is-left"><svg aria-hidden="true" viewBox="-50 -50 100 100"><use href="#rose"/></svg></div>
-      <p class="demo-result-note">※この結果はデモ用に事前作成した固定データです。実際のAI解析を行う場合はGemini APIキーが必要です。</p>
+      <div class="flourish is-left"><svg aria-hidden="true"><use href="#gd" width="28" height="28"/></svg></div>
+      <p class="note is-warn">※この結果はデモ用に事前作成した固定データです。実際のAI解析を行う場合はGemini APIキーが必要です。</p>
       <div id="demo-result" class="receipt-results"></div>
     </section>
   </main>
-  <script src="./config.js"></script>
-  <script src="./demo.js?v=20261006-arch-window"></script>
+  <script src="./config.js?v=20261006-no-kinun"></script>
+  <script src="./demo.js?v=20261006-gold-coin"></script>
 </body>
 </html>

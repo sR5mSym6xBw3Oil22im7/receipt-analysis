@@ -11,6 +11,7 @@ let analyzedReceipts = [];
 let analysisReady = false;
 let busy = false;
 const stepItems = [...document.querySelectorAll("#steps li")];
+const dropZone = document.getElementById("drop-zone");
 
 function setStep(index) {
   stepItems.forEach((item, i) => {
@@ -102,10 +103,30 @@ fileInputs.forEach((input, index) => {
   });
 });
 
+// ドロップされたファイルを選択欄へ渡し、通常の選択と同じ処理を行う。
+["dragenter", "dragover"].forEach((type) => dropZone.addEventListener(type, (event) => {
+  event.preventDefault();
+  dropZone.classList.add("is-over");
+}));
+["dragleave", "drop"].forEach((type) => dropZone.addEventListener(type, (event) => {
+  event.preventDefault();
+  dropZone.classList.remove("is-over");
+}));
+dropZone.addEventListener("drop", (event) => {
+  const droppedFiles = event.dataTransfer?.files;
+  if (busy || !droppedFiles?.length) return;
+  const transfer = new DataTransfer();
+  transfer.items.add(droppedFiles[0]);
+  fileInputs[0].files = transfer.files;
+  fileInputs[0].dispatchEvent(new Event("change"));
+});
+
 function setBusy(mode) {
   busy = Boolean(mode);
   submitButton.disabled = busy;
   submitButton.textContent = mode === "analyze" ? "解析中..." : "解析";
+  submitButton.classList.toggle("is-busy", mode === "analyze");
+  saveButton.classList.toggle("is-busy", mode === "save");
   saveButton.textContent = mode === "save" ? "保存中..." : "PostgreSQLへ保存";
   updateSaveButton();
 }
@@ -328,7 +349,7 @@ function renderReceiptResults(receipts) {
   receiptResultsElement.replaceChildren();
   receipts.forEach((receipt, index) => {
     const result = document.createElement("article");
-    result.className = receipt.stored ? "receipt-result is-saved" : "receipt-result";
+    result.className = receipt.stored ? "receipt-paper is-saved" : "receipt-paper";
     const heading = document.createElement("h3");
     heading.textContent = `レシート画像${receipt.fileNumber ?? index + 1}`;
     const text = document.createElement("pre");

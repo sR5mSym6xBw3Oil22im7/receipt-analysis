@@ -36,7 +36,7 @@ function buildDemoLines() {
 
 function renderDemoResult() {
   const result = document.createElement("article");
-  result.className = "receipt-result";
+  result.className = "receipt-paper";
 
   const heading = document.createElement("h3");
   heading.textContent = "サンプルレシート";
@@ -51,6 +51,7 @@ function renderDemoResult() {
 
 analyzeButton.addEventListener("click", () => {
   analyzeButton.disabled = true;
+  analyzeButton.classList.add("is-busy");
   resultCard.classList.add("hidden");
   statusElement.classList.remove("error-message");
   statusElement.textContent = "解析中...（デモ用データを準備しています）";
@@ -59,6 +60,7 @@ analyzeButton.addEventListener("click", () => {
     renderDemoResult();
     statusElement.textContent = "デモ解析が完了しました。";
     analyzeButton.disabled = false;
+    analyzeButton.classList.remove("is-busy");
     resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
   }, DEMO_ANALYSIS_DELAY_MS);
 });
