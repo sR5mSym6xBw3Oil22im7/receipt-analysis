@@ -567,3 +567,19 @@ form { display: grid; gap: 18px; margin-top: 8px; }
 .status.error-message { color: var(--danger); }
 .file-chip.selected-file-name { pointer-events: none; }
 .file-chip.selected-file-name.error-message { color: var(--danger); border-color: var(--danger); }
+
+/* ご注意 */
+.notice {
+  margin: 16px 0 20px;
+  padding: 14px 18px;
+  background: var(--warn-bg);
+  border: 1px solid var(--gold-line);
+  border-left: 4px solid var(--gold);
+  border-radius: var(--radius-sm);
+  color: var(--warn-ink);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.notice-title { margin: 0 0 6px; font-weight: 700; }
+.notice ul { margin: 0; padding-left: 1.2em; }
+.notice li + li { margin-top: 4px; }
